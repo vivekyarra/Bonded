@@ -1,6 +1,6 @@
 # Evaluation: Bonded vs LLM-only
 
-Run 2026-10-30T09:55:08.276Z · Qloo live · baseline model not run (no GEMINI_API_KEY)
+Run 2026-10-30T15:45:28.202Z · Qloo live · baseline model gemini-3.8-flash
 
 Twenty hand-written synthetic pairs (`src/lib/eval/goldset.ts`): ten obviously compatible, ten obviously not. Labels were written before any engine run.
 
