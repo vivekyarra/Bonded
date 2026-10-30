@@ -218,7 +218,8 @@ function insights(params: Record<string, string>) {
     const by = seeds.filter((s) => [...s.clusters].some((c) => e.clusters.has(c))).map((s) => s.id);
     // Weak background affinity for everything else, so profiles are never empty.
     const aff = w > 0 ? 0.45 + 0.5 * Math.min(1, w) * (0.75 + 0.25 * unit(e.id + seedKey)) : 0.05 + 0.2 * unit(e.id + seedKey);
-    scored.push({ e, aff: Math.min(0.99, aff), by });
+    // Like the real graph, unrelated entities rarely make a 50-item list.
+    if (w > 0 || unit(e.id + seedKey) < 0.12) scored.push({ e, aff: Math.min(0.99, aff), by });
   }
   scored.sort((a, b) => b.aff - a.aff);
   return {

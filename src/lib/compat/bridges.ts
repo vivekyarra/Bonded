@@ -45,12 +45,17 @@ export function findBridges(a: TasteProfile, b: TasteProfile, max = MAX_BRIDGES)
 export function pickDiverse(candidates: Bridge[], max: number): Bridge[] {
   const sorted = [...candidates].sort((x, y) => y.strength - x.strength || x.name.localeCompare(y.name));
   const perDomain = new Map<Domain, number>();
+  const names = new Set<string>();
   const out: Bridge[] = [];
   for (const c of sorted) {
     if (out.length >= max) break;
+    // The same title can exist as several Qloo entities (e.g. an artist and a biopic): show it once.
+    const key = c.name.trim().toLowerCase();
+    if (names.has(key)) continue;
     const n = perDomain.get(c.domain) ?? 0;
     if (n >= MAX_PER_DOMAIN) continue;
     perDomain.set(c.domain, n + 1);
+    names.add(key);
     out.push(c);
   }
   return out;
