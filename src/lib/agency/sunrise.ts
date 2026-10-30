@@ -246,8 +246,8 @@ function genCaregiver(i: number, rand: () => number): Omit<Caregiver, "phoneMock
   if (rand() < 0.12) skills.add("hoyer_lift");
   if (rand() < 0.12) skills.add("wound_care");
   if (rand() < 0.1) skills.add("hospice");
-  const days = pickN(rand, ALL_DAYS, 4 + Math.floor(rand() * 3));
-  const blocks: Block[][] = [["morning"], ["afternoon"], ["morning", "afternoon"], ["afternoon", "evening"], ["morning", "afternoon"]];
+  const days = pickN(rand, ALL_DAYS, 5 + Math.floor(rand() * 3));
+  const blocks: Block[][] = [["morning"], ["afternoon"], ["morning", "afternoon"], ["afternoon", "evening"], ["morning", "afternoon"], ["morning", "afternoon", "evening"]];
   const myBlocks = blocks[Math.floor(rand() * blocks.length)];
   const arch = pickN(rand, CG_ARCH, rand() < 0.55 ? 1 : 2);
   return {
@@ -259,7 +259,7 @@ function genCaregiver(i: number, rand: () => number): Omit<Caregiver, "phoneMock
     home: homeIn(area, rand),
     skills: [...skills],
     languages,
-    maxHours: [20, 24, 30, 32, 40][Math.floor(rand() * 5)],
+    maxHours: [24, 30, 32, 36, 40][Math.floor(rand() * 5)],
     petsOk: rand() < 0.8,
     smokeOk: rand() < 0.3,
     availability: Object.fromEntries(days.map((d) => [d, myBlocks])) as Caregiver["availability"],
@@ -386,7 +386,7 @@ function assignRegulars(clients: Client[], caregivers: Caregiver[], schedules: R
       if (client.smoker) chosen.smokeOk = true;
       for (const wd of sc.weekdays) chosen.availability[wd] = [...new Set([...(chosen.availability[wd] ?? []), sc.block])];
       if (client.genderPrefPersonalCare && client.genderPrefPersonalCare !== chosen.gender) client.genderPrefPersonalCare = undefined;
-      if (travelMinutes(chosen.home, client.home) > 40) chosen.home = { ...client.home, lat: client.home.lat + 0.01, area: client.home.area };
+      if (travelMinutes(chosen.home, client.home) > 45) chosen.home = { ...client.home, lat: client.home.lat + 0.01, area: client.home.area };
     }
     sc.caregiverId = chosen.id;
     hours.set(chosen.id, (hours.get(chosen.id) ?? 0) + needHours);
@@ -417,6 +417,10 @@ export function buildSunrise(today = phoenixToday()): Agency {
   ].map((c, i) => ({ ...c, phoneMock: `(602) 555-01${String(i).padStart(2, "0")}` }));
   const clients: Client[] = [...structuredClone(STORY_CLIENTS), ...Array.from({ length: 54 }, (_, i) => genClient(i, rand))];
 
+  // Open schedules on the Match Board should be coverable by someone.
+  for (const c of clients) if (OPEN_GENERATED.has(c.id)) c.languagesNeeded = [];
+  const agnes = clients.find((c) => c.id === "c07")!;
+  agnes.home = { lat: 33.4215, lng: -111.9525, area: "Tempe" };
   const schedules: RecurringSchedule[] = structuredClone(STORY_SCHEDULES);
   for (const c of clients.slice(STORY_CLIENTS.length)) {
     const days = pickN(rand, [1, 2, 3, 4, 5, 6] as Weekday[], 2 + Math.floor(rand() * 2)).sort() as Weekday[];

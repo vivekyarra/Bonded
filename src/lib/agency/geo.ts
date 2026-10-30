@@ -33,4 +33,4 @@ export function travelMinutes(a: Home, b: Home): number {
   return Math.round((haversineKm(a, b) * 1.35 * 60) / 45 + 4);
 }
 
-export const TRAVEL_LIMIT_MIN = 40;
+export const TRAVEL_LIMIT_MIN = 45;
