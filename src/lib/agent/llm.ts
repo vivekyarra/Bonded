@@ -103,7 +103,8 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
       });
       if (res.status === 429 || res.status >= 500) {
         last = new LlmError(`Gemini ${res.status}`, res.status);
-        if (attempt < 3) await new Promise((r) => setTimeout(r, retryDelayMs(attempt, await res.json().catch(() => null))));
+        const wait = retryDelayMs(attempt, await res.json().catch(() => null));
+        if (attempt < 3) await new Promise((r) => setTimeout(r, wait));
         continue;
       }
       const json = (await res.json().catch(() => ({}))) as {
