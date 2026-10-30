@@ -90,7 +90,7 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
 
   const url = `${BASE}/models/${encodeURIComponent(env.geminiModel)}:generateContent`;
   let last: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 45_000);
     try {
@@ -103,7 +103,7 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
       });
       if (res.status === 429 || res.status >= 500) {
         last = new LlmError(`Gemini ${res.status}`, res.status);
-        await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
+        if (attempt < 3) await new Promise((r) => setTimeout(r, retryDelayMs(attempt, await res.json().catch(() => null))));
         continue;
       }
       const json = (await res.json().catch(() => ({}))) as {
@@ -122,6 +122,15 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
     }
   }
   throw last instanceof Error ? last : new LlmError("Gemini request failed");
+}
+
+/** Wait before retrying a 429/5xx: Gemini's own RetryInfo delay when given (capped at 30 s),
+ *  else exponential backoff. */
+function retryDelayMs(attempt: number, body: unknown): number {
+  const details = (body as { error?: { details?: { retryDelay?: string }[] } } | null)?.error?.details ?? [];
+  const hinted = details.map((d) => /^(\d+(?:\.\d+)?)s$/.exec(d.retryDelay ?? "")?.[1]).find(Boolean);
+  if (hinted) return Math.min(30_000, Number(hinted) * 1000 + 250);
+  return Math.min(8_000, 1_000 * 2 ** attempt);
 }
 
 /** Single structured call returning parsed JSON; null when Gemini is unavailable or fails. */

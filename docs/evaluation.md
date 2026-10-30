@@ -2,7 +2,7 @@
 
 Run 2026-10-30T15:45:28.202Z · Qloo live · baseline model gemini-3.8-flash
 
-Twenty hand-written synthetic pairs (`src/lib/eval/goldset.ts`): ten obviously compatible, ten obviously not. Labels were written before any engine run.
+Twenty hand-labelled pairs (`src/lib/eval/goldset.ts`): ten obviously compatible, ten obviously not. Labels were written before any engine run.
 
 - **Separation** = share of (compatible, incompatible) pairs where the compatible pair scored higher (ROC AUC; 50% = chance).
 - **Accuracy** = share of pairs on the right side of a score of 50.

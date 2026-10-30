@@ -6,6 +6,8 @@ import type { QlooClient } from "../qloo/client";
 import { GOLD_SET, type GoldPair } from "./goldset";
 
 export const THRESHOLD = 50;
+/** Gap between LLM-baseline calls (EVAL_LLM_PACE_MS overrides; tests set it to 0). */
+const LLM_PACE_MS = Number(process.env.EVAL_LLM_PACE_MS ?? 7_000);
 
 export interface EvalRow {
   id: string;
@@ -49,6 +51,8 @@ export async function runGoldSet(qloo: QlooClient, opts: { qlooMode: string; mod
       buildProfile(qloo, { personType: "caregiver", personId: `${p.id}b`, seeds: p.b }),
     ]);
     const s = scorePair(a, b);
+    // Pace the baseline so a per-minute Gemini quota is never the reason a row is empty.
+    if (opts.withLlm && rows.length && LLM_PACE_MS > 0) await new Promise((r) => setTimeout(r, LLM_PACE_MS));
     rows.push({ id: p.id, note: p.note, compatible: p.compatible, bonded: s.tasteScore, bridges: s.bridges.slice(0, 3).map((x) => x.name), llm: opts.withLlm ? await llmScore(p) : null });
   }
   const pos = rows.filter((r) => r.compatible);
