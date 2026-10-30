@@ -55,7 +55,7 @@ export async function fairnessAudit(scoreFn: ScoreFn, agency: Agency = getAgency
     const rotation = [...rest].sort((a, b) => rateSoFar(a.caregiverId) - rateSoFar(b.caregiverId) || b.composite - a.composite)[0];
     if (rotation) give(rotation.caregiverId);
   }
-  const demo = auditDemographics(agency.caregivers.map((c) => c.id));
+  const selfReports = auditDemographics(agency.caregivers.map((c) => c.id));
   const tally = (labels: Map<string, AuditGroup>) =>
     AUDIT_GROUPS.map((group) => {
       const ids = [...labels.entries()].filter(([, g]) => g === group).map(([id]) => id);
@@ -66,7 +66,7 @@ export async function fairnessAudit(scoreFn: ScoreFn, agency: Agency = getAgency
   const testedOf = (rows: GroupRow[]) => rows.filter((r) => r.opportunities >= MIN_GROUP_OPPORTUNITIES && r.group !== "Prefer not to say");
   const statOf = (rows: GroupRow[]) => chiSquare(testedOf(rows).map((r) => [r.offers, r.opportunities - r.offers])).stat;
 
-  const labels = new Map(demo.map((d) => [d.caregiverId, d.groupSelfReported]));
+  const labels = new Map(selfReports.map((d) => [d.caregiverId, d.groupSelfReported]));
   const rows = tally(labels);
   const tested = testedOf(rows);
   const chi = chiSquare(tested.map((r) => [r.offers, r.opportunities - r.offers]));

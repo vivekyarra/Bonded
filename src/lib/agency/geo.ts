@@ -28,7 +28,7 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-/** Rough drive time: road factor 1.35 at 45 km/h average plus 4 minutes to park. */
+/** Estimated drive time: road factor 1.35 at 45 km/h average plus 4 minutes to park. */
 export function travelMinutes(a: Home, b: Home): number {
   return Math.round((haversineKm(a, b) * 1.35 * 60) / 45 + 4);
 }

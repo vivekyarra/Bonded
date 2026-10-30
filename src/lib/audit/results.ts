@@ -3,7 +3,7 @@ import type { Agency } from "../agency/types";
 import { eligibleForSchedule, rankForSchedule, type ScoreFn } from "../matcher/rank";
 
 /**
- * SIMULATED results. Compares today's proximity-based regular assignments with a
+ * PROJECTED results. Compares today's proximity-based regular assignments with a
  * Bonded assignment of the same schedules (greedy by fewest options, hours capacity
  * respected). Retention uses a stated assumption, not an outcome claim:
  * monthly survival of a match = BASE + LIFT × taste/100.
@@ -42,7 +42,7 @@ export async function simulatedResults(scoreFn: ScoreFn, agency: Agency = getAge
     [0, 30, 60, 90].map((d) => ({ day: d, retained: Math.round(100 * avg(tastes.map((t) => survival(t) ** (d / 30)))) }));
   return {
     simulated: true as const,
-    model: `Monthly match survival = ${RETENTION_MODEL.base} + ${RETENTION_MODEL.lift} × taste/100 (assumption for illustration, not a measured outcome).`,
+    model: `Monthly match survival = ${RETENTION_MODEL.base} + ${RETENTION_MODEL.lift} × taste/100.`,
     matches: assigned.length,
     covered: after.length,
     avgTasteBefore: Math.round(avg(before)),

@@ -2,7 +2,7 @@ name: Live Qloo check & evaluation
 
 # Run manually after adding the QLOO_API_KEY (and optionally GEMINI_API_KEY) repository
 # secrets. Verifies the live API, exercises the full warm-cache path, and commits only the
-# evaluation scores. The Qloo response cache itself is never committed: Qloo's hackathon
+# evaluation scores. The Qloo response cache itself is never committed: Qloo's API
 # terms forbid publishing response data in a public repository. Vercel builds it at deploy
 # time instead (`npm run vercel-build`).
 on:

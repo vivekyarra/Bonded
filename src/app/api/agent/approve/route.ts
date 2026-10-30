@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Scheduler approval. Sends the offer (simulated), simulates the caregiver accepting,
+ * Scheduler approval. Records the approved offer and the caregiver's acceptance,
  * builds their Bridge Kit, and drafts — but does not send — the family notice.
  */
 export async function POST(req: Request) {

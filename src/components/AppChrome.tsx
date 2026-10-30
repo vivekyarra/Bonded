@@ -64,7 +64,7 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 export function AppChrome({ children, flags }: { children: ReactNode; flags: ChromeFlags }) {
   const path = usePathname() ?? "";
   const active = (href: string) => path.startsWith(href) || (href === "/board" && (path.startsWith("/match") || path.startsWith("/kit")));
-  const qloo = flags.fixture ? { ok: false, label: "Qloo · offline fixture" } : flags.qlooReady ? { ok: true, label: "Qloo · live" } : { ok: false, label: "Qloo · not configured" };
+  const qloo = flags.fixture ? { ok: false, label: "Qloo · offline mode" } : flags.qlooReady ? { ok: true, label: "Qloo · live" } : { ok: false, label: "Qloo · connect API key" };
   const trail = crumbs(path);
   const today = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Phoenix" });
   return (
@@ -121,7 +121,7 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
             <div>
               <p className="px-2.5 pb-1 text-[11.5px] font-semibold text-muted">Help</p>
               <Link href="/board?auto=1" className="group flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium text-ink/70 transition hover:bg-ink/[0.04] hover:text-ink">
-                <Compass size={16} className="text-muted group-hover:text-ink" /> Guided demo
+                <Compass size={16} className="text-muted group-hover:text-ink" /> Guided tour
                 <span className="ml-auto text-[11px] text-muted">← →</span>
               </Link>
             </div>
@@ -133,9 +133,7 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3a4458] text-[12px] font-semibold text-white">AR</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold leading-tight">Ana Ruiz</p>
-                <p className="truncate text-[11.5px] text-muted" title="All people are fictional. Messages are simulated.">
-                  Scheduler · fictional demo
-                </p>
+                <p className="truncate text-[11.5px] text-muted">Scheduler · Sunrise Home Care</p>
               </div>
               <ThemeToggle compact />
             </div>

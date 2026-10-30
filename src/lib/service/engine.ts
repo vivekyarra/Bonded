@@ -7,7 +7,7 @@ import type { PairScore, SeedInput, TasteProfile } from "../compat/types";
 import { qloo } from "../qloo/client";
 
 /**
- * Glue between the synthetic agency, the Qloo client and the pure engine.
+ * Glue between the agency data, the Qloo client and the pure engine.
  * Profiles and pair scores are memoised per server instance; Qloo responses underneath
  * are cached (bundle → disk → memory), so repeat requests never hit the API.
  */

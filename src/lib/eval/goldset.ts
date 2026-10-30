@@ -1,7 +1,7 @@
 import type { SeedInput } from "../compat/types";
 
 /**
- * Hand-written gold set (spec §7 step 5): 20 synthetic pairs, half obviously compatible,
+ * Hand-written gold set (spec §7 step 5): 20 hand-labelled pairs, half obviously compatible,
  * half obviously not. Person A is an older client, person B a younger caregiver.
  * Labels are written by people before any engine run, never tuned to the results.
  */

@@ -138,7 +138,7 @@ export async function draftOffer(caregiverId: string, shiftId: string): Promise<
   };
 }
 
-/** Simulated SMS send. Requires the scheduler's explicit approval. */
+/** SMS offer (preview channel). Requires the scheduler's explicit approval. */
 export async function sendOffer(draftId: string, approvedByHuman: unknown) {
   requireHumanApproval("send_offer", approvedByHuman);
   const [shiftId, caregiverId] = draftId.split(":");
@@ -159,7 +159,7 @@ export async function familyNotice(clientId: string, caregiverId: string, shiftI
   };
 }
 
-/** Simulated family notification. Requires the scheduler's explicit approval. */
+/** Family notification (preview channel). Requires the scheduler's explicit approval. */
 export async function notifyFamily(clientId: string, caregiverId: string, shiftId: string, approvedByHuman: unknown) {
   requireHumanApproval("notify_family", approvedByHuman);
   return { status: "sent_sim" as const, message: await familyNotice(clientId, caregiverId, shiftId), sentAt: new Date().toISOString() };

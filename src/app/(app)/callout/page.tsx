@@ -268,7 +268,7 @@ export default function CalloutPage() {
                 <div className="mt-3 flex justify-end">
                   <div className="max-w-[85%] rounded-[20px] rounded-br-md bg-gradient-to-b from-teal/90 to-teal px-4 py-2.5 text-[15px] leading-snug text-white shadow-sm">{draft.text}</div>
                 </div>
-                <p className="mt-1 text-right text-[12.5px] text-muted">{draft.phone} · simulated</p>
+                <p className="mt-1 text-right text-[12.5px] text-muted">{draft.phone} · SMS preview</p>
                 <button className="btn-primary mt-4 w-full py-3" onClick={approve} disabled={approving}>
                   <Send size={16} /> {approving ? "Sending…" : `Approve & send to ${draft.caregiverName.split(" ")[0]}`}
                 </button>

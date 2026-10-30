@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Intake preview: seeds → resolve via Qloo → build profile. The demo is stateless and
- * synthetic, so nothing is stored; a real deployment would persist the TasteSeed rows.
+ * Intake preview: seeds → resolve via Qloo → build profile. Stateless: the profile is
+ * returned, and agencies persist the TasteSeed rows (see docs/architecture.md).
  */
 export async function POST(req: Request, { params }: { params: { personType: string; id: string } }) {
   if (!["client", "caregiver"].includes(params.personType)) return json({ error: "personType must be client or caregiver" }, 400);

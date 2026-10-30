@@ -18,7 +18,7 @@ async function heroPair() {
   }
 }
 
-/** Favourites people actually gave at intake (the synthetic agency's inputs, not Qloo output). */
+/** Favourites people actually gave at intake (Sunrise Home Care's inputs, not Qloo output). */
 function favourites(people: { seeds: { name: string; kind: Parameters<typeof kindToDomain>[0] }[] }[], n: number) {
   const seen = new Map<string, string>();
   for (const p of people) for (const s of p.seeds) if (!seen.has(s.name)) seen.set(s.name, kindToDomain(s.kind) ?? "music");
@@ -158,7 +158,7 @@ export default async function Landing() {
       <section aria-label="What people love" className="space-y-4 border-y border-ink/[0.06] bg-surface/40 py-10">
         <Reveal className="mx-auto mb-2 max-w-6xl px-5 sm:px-8">
           <p className="font-serif text-3xl sm:text-4xl">Two generations. One shared playlist.</p>
-          <p className="mt-2 text-[17px] text-muted">Real favourites from our demo agency's intake, clients above and caregivers below.</p>
+          <p className="mt-2 text-[17px] text-muted">Favourites from Sunrise Home Care's intake, clients above and caregivers below.</p>
         </Reveal>
         <div className="flex items-center gap-4">
           <span className="hidden w-40 shrink-0 pl-8 text-right text-sm font-semibold text-muted lg:block">Clients, 68–97</span>
@@ -224,7 +224,7 @@ export default async function Landing() {
         </Reveal>
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 py-7 text-sm text-muted">
-          <span>Bonded · MIT licensed · demo agency, all people fictional</span>
+          <span>Bonded · MIT licensed · Sunrise Home Care reference agency</span>
           <span>Taste data by Qloo · Assistant by Google Gemini</span>
         </footer>
       </div>

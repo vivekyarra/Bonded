@@ -132,7 +132,7 @@ export default function BoardPage() {
             <>
               {slow && (
                 <p className="mb-3 flex items-center gap-2 text-sm text-muted" role="status">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-teal" /> Building taste profiles with Qloo. The first run takes a few seconds.
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-teal" /> Building taste profiles with Qloo…
                 </p>
               )}
               <SkeletonCards n={6} />

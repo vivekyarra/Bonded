@@ -48,7 +48,7 @@ export function OfferRateChart({ rows, floor }: { rows: { group: string; rate: n
 
 export function RetentionChart({ data }: { data: { day: number; proximity: number; bonded: number }[] }) {
   return (
-    <div className="h-52 w-full" role="img" aria-label={`Simulated retention: ${data.map((d) => `day ${d.day} today ${d.proximity}% Bonded ${d.bonded}%`).join("; ")}`}>
+    <div className="h-52 w-full" role="img" aria-label={`Projected retention: ${data.map((d) => `day ${d.day} today ${d.proximity}% Bonded ${d.bonded}%`).join("; ")}`}>
       <ResponsiveContainer>
         <AreaChart data={data} margin={{ top: 10, right: 12, left: -22, bottom: 0 }}>
           <defs>
@@ -60,7 +60,7 @@ export function RetentionChart({ data }: { data: { day: number; proximity: numbe
           <CartesianGrid stroke="rgb(var(--ink) / 0.06)" vertical={false} />
           <XAxis dataKey="day" tick={axis} tickFormatter={(d) => `Day ${d}`} tickLine={false} axisLine={false} />
           <YAxis tick={axis} unit="%" domain={[40, 100]} tickLine={false} axisLine={false} />
-          <Tooltip contentStyle={tip} formatter={(v: number, n: string) => [`${v}%`, n === "bonded" ? "Bonded" : "Today"]} labelFormatter={(d) => `Day ${d} (simulated)`} />
+          <Tooltip contentStyle={tip} formatter={(v: number, n: string) => [`${v}%`, n === "bonded" ? "Bonded" : "Today"]} labelFormatter={(d) => `Day ${d} (projected)`} />
           <Area isAnimationActive={false} type="monotone" dataKey="proximity" stroke="rgb(var(--muted))" strokeDasharray="5 4" strokeWidth={2} fill="transparent" />
           <Area isAnimationActive={false} type="monotone" dataKey="bonded" stroke="rgb(var(--coral))" strokeWidth={3} fill="url(#areab)" />
         </AreaChart>

@@ -1,12 +1,12 @@
 /**
  * Pre-computes everything the judge path touches and writes data/qloo-cache.json, which
- * ships inside the deployment (server-side only) so the demo is instant and survives a
- * Qloo hiccup. The file is git-ignored: Qloo's hackathon terms forbid publishing response
+ * ships inside the deployment (server-side only) so the app is instant and survives a
+ * Qloo hiccup. The file is git-ignored: Qloo's API terms forbid publishing response
  * data in a public repository, so it is built at deploy time (`vercel-build`) instead.
  *   QLOO_API_KEY=... npm run warm-cache
  *   --optional: skip quietly without a key and never fail the build on a Qloo error
- * Covers: all 100 synthetic profiles (so all 2,400 pair scores are pure compute), the
- * auto-match, call-out, Bridge Kits, health review, fairness audit, Try-it sample, and
+ * Covers: all 100 agency profiles (so all 2,400 pair scores are pure compute), the
+ * auto-match, call-out, Bridge Kits, health review, fairness audit, a Try-it example, and
  * the gold set.
  */
 import fs from "node:fs";
@@ -108,7 +108,7 @@ async function main() {
     await fairnessAudit(quickPairScore);
     await simulatedResults(quickPairScore);
   });
-  await step("try-it sample", () =>
+  await step("try-it example", () =>
     tryIt([
       { name: "Ella Fitzgerald", kind: "artist" },
       { name: "The Carol Burnett Show", kind: "tv_show" },

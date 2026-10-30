@@ -1,7 +1,7 @@
 import { env, hasLlm } from "../env";
 
 /**
- * Minimal Google Gemini client (REST `models.generateContent`, free tier friendly).
+ * Minimal Google Gemini client (REST `models.generateContent`).
  * The LLM only orchestrates and phrases: it never supplies an entity, a person or a score.
  * Without GEMINI_API_KEY every caller falls back to deterministic code paths.
  */
@@ -103,7 +103,8 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
       });
       if (res.status === 429 || res.status >= 500) {
         last = new LlmError(`Gemini ${res.status}`, res.status);
-        await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
+        const wait = retryDelayMs(attempt, await res.json().catch(() => null));
+        if (attempt < 2) await new Promise((r) => setTimeout(r, wait));
         continue;
       }
       const json = (await res.json().catch(() => ({}))) as {
@@ -124,6 +125,15 @@ export async function generate(req: GenerateRequest): Promise<GenerateResult> {
   throw last instanceof Error ? last : new LlmError("Gemini request failed");
 }
 
+/** Wait before retrying a 429/5xx: Gemini's own RetryInfo delay when given, else exponential
+ *  backoff. Capped at 4 s so a quota limit never stalls a live request. */
+function retryDelayMs(attempt: number, body: unknown): number {
+  const details = (body as { error?: { details?: { retryDelay?: string }[] } } | null)?.error?.details ?? [];
+  const hinted = details.map((d) => /^(\d+(?:\.\d+)?)s$/.exec(d.retryDelay ?? "")?.[1]).find(Boolean);
+  if (hinted) return Math.min(4_000, Number(hinted) * 1000 + 250);
+  return Math.min(4_000, 1_000 * 2 ** attempt);
+}
+
 /** Single structured call returning parsed JSON; null when Gemini is unavailable or fails. */
 export async function llmJson<T>(system: string, user: string, schema: Record<string, unknown>): Promise<T | null> {
   if (!hasLlm()) return null;
@@ -131,7 +141,9 @@ export async function llmJson<T>(system: string, user: string, schema: Record<st
     const res = await generate({ system, contents: [{ role: "user", parts: [{ text: user }] }], jsonSchema: schema });
     if (res.finishReason && !["STOP", "MAX_TOKENS"].includes(res.finishReason)) return null;
     return JSON.parse(textOf(res.content)) as T;
-  } catch {
+  } catch (err) {
+    // Server-side only; the message comes from Gemini and never contains the key.
+    console.warn(`llmJson: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
