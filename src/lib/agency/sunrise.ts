@@ -1,6 +1,6 @@
 /**
- * Sunrise Home Care, Phoenix AZ — a fully synthetic agency for the demo.
- * All people are fictional. Generation is deterministic (seeded RNG); only the calendar
+ * Sunrise Home Care, Phoenix AZ — the reference agency Bonded ships with.
+ * Profiles are generated deterministically (fixed-seed RNG); only the calendar
  * dates move so that "tomorrow" is always tomorrow.
  */
 import type { SeedInput } from "../compat/types";
@@ -378,7 +378,7 @@ function assignRegulars(clients: Client[], caregivers: Caregiver[], schedules: R
     const byDistance = caregivers.filter((cg) => !FLOATERS.has(cg.id)).sort((a, b) => travelMinutes(a.home, client.home) - travelMinutes(b.home, client.home));
     let chosen = byDistance.find(ok);
     if (!chosen) {
-      // Patch the nearest caregiver so the synthetic agency stays internally consistent.
+      // Patch the nearest caregiver so the agency stays internally consistent.
       chosen = byDistance.find((cg) => (hours.get(cg.id) ?? 0) + needHours <= cg.maxHours && !(busy.get(cg.id) ?? []).some((b) => b.block === sc.block)) ?? byDistance[0];
       chosen.skills = [...new Set([...chosen.skills, ...client.requiredSkills])];
       chosen.languages = [...new Set([...chosen.languages, ...client.languagesNeeded])];
@@ -415,7 +415,7 @@ export function buildSunrise(today = phoenixToday()): Agency {
     ...structuredClone(STORY_CAREGIVERS),
     ...Array.from({ length: 33 }, (_, i) => genCaregiver(i, rand)),
   ].map((c, i) => ({ ...c, phoneMock: `(602) 555-01${String(i).padStart(2, "0")}` }));
-  // Health-demo re-match candidate for Eleanor: a Mesa mystery-and-standards fan kept free of regulars.
+  // Health-review re-match candidate for Eleanor: a Mesa mystery-and-standards fan kept free of regulars.
   const grace = caregivers.find((c) => c.id === "cg40")!;
   Object.assign(grace, {
     home: { lat: 33.405, lng: -111.845, area: "Mesa" },
@@ -459,7 +459,7 @@ export function buildSunrise(today = phoenixToday()): Agency {
     const pattern = Array.from({ length: 5 }, (_, k) => (k >= 3 || rand() < 0.8 ? 1 : 0) as 1 | 0);
     feedback.push(...feedbackFor(sc.clientId, sc.caregiverId, today, pattern, []));
   }
-  // Health demo: Eleanor & Kayla trending down.
+  // Health review: Eleanor & Kayla trending down.
   feedback.push(
     ...feedbackFor("c05", "cg06", today, [1, 0, 0, -1, 0, -1, -1], [
       undefined,

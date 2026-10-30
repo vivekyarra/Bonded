@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-/** The judge path, one click per step. Query flags make each page start its own demo action. */
+/** The judge path, one click per step. Query flags make each page start its own showcase action. */
 export const TOUR = [
   { path: "/board", go: "/board?auto=1", title: "Fill every open schedule", hint: "Bonded proposes the best qualified caregiver for each client" },
   { path: "/match/c01/cg02", go: "/match/c01/cg02", title: "See why Dolores & Maria click", hint: "84 and 23, bridged by Qloo, with evidence for each" },

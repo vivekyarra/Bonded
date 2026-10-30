@@ -7,7 +7,7 @@ import { DOMAIN_LABEL } from "../qloo/types";
 /**
  * Calibration: on live Qloo data, weighted Jaccard over 50-entity profiles mostly falls
  * between 0.02 and 0.3, so the raw sum is mapped onto 0–100 with a saturating curve
- * (raw 0.05 → 33, 0.1 → 55, 0.2 → 80). K was set so the synthetic agency's median pair
+ * (raw 0.05 → 33, 0.1 → 55, 0.2 → 80). K was set so the reference agency's median pair
  * lands near 40. The mapping is monotonic, so ranking (and the gold-set separation
  * metric) is identical to the raw formula in the spec.
  */

@@ -133,7 +133,7 @@ export interface Agency {
   declines: ShiftDecline[];
   /** Pairs who have worked together before (continuity), as "clientId|caregiverId". */
   history: string[];
-  /** Demo anchors. */
+  /** Showcase anchors used by the guided tour. */
   demo: {
     calloutShiftId: string;
     calloutCaregiverId: string;

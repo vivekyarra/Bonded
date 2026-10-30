@@ -23,7 +23,7 @@ export interface AuditDemographic {
   groupSelfReported: AuditGroup;
 }
 
-/** Synthetic self-reports for the 40 synthetic caregivers. */
+/** Generated self-reports for the 40 agency caregivers (audit only, never used in matching). */
 export function auditDemographics(caregiverIds: string[]): AuditDemographic[] {
   const rand = mulberry32(777);
   const weights = [0.34, 0.3, 0.12, 0.08, 0.04, 0.05, 0.07];

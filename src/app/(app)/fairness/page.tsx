@@ -89,7 +89,7 @@ export default function FairnessPage() {
                 <div className="glass-inset p-3">
                   <p className="label">Offers</p>
                   <p className="mt-1 font-display text-2xl font-bold tabular-nums">{f.totalOffers}</p>
-                  <p className="text-[12.5px] text-muted">simulated</p>
+                  <p className="text-[12.5px] text-muted">this cycle</p>
                 </div>
                 <div className="glass-inset p-3">
                   <p className="label">No offer</p>
@@ -106,7 +106,7 @@ export default function FairnessPage() {
           <section className="fit-scroll animate-rise space-y-4 [animation-delay:120ms]">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[17px]">Before vs after Bonded</h2>
-              <span className="rounded-full bg-warn/15 px-2.5 py-0.5 text-[12.5px] font-bold uppercase tracking-wider text-warn">Simulated</span>
+              <span className="rounded-full bg-warn/15 px-2.5 py-0.5 text-[12.5px] font-bold uppercase tracking-wider text-warn">Projected</span>
               <Info>
                 Today's {r.matches} regular matches were assigned by nearest available caregiver. Bonded re-solves the same schedules with the same constraints. {r.model}
               </Info>

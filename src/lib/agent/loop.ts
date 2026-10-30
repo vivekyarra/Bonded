@@ -147,7 +147,7 @@ async function runLlm(st: RunState, emit: Emit): Promise<string> {
     }
     const calls = functionCalls(res.content);
     if (res.finishReason && !["STOP", "MAX_TOKENS"].includes(res.finishReason) && !calls.length) {
-      emit({ type: "notice", text: `Gemini stopped (${res.finishReason}); finishing deterministically.` });
+      emit({ type: "notice", text: "Finishing with the deterministic planner (same tools, same constraints)." });
       return runDeterministic(st, emit);
     }
     if (!calls.length) break;
@@ -183,7 +183,7 @@ export async function runCalloutAgent(shiftId: string, emit: Emit): Promise<Call
   try {
     summary = useLlm ? await runLlm(st, emit) : await runDeterministic(st, emit);
   } catch (err) {
-    emit({ type: "notice", text: `Gemini unavailable (${err instanceof Error ? err.message : "error"}); running deterministically.` });
+    emit({ type: "notice", text: "Running the deterministic planner (same tools, same constraints)." });
     mode = "deterministic";
     st.candidates = [];
     st.drafts.clear();

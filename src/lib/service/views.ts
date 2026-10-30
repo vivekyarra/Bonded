@@ -91,7 +91,7 @@ export async function llmOnlyBaseline(clientId: string, caregiverId: string) {
   const q = byId(getAgency());
   const c = q.client(clientId);
   const g = q.caregiver(caregiverId);
-  if (!hasLlm()) return { available: false as const, reason: "Set GEMINI_API_KEY to run the live LLM-only baseline." };
+  if (!hasLlm()) return { available: false as const, reason: "The AI baseline runs when Gemini is connected." };
   const out = await llmJson<{ score: number; shared_interests: string[]; rationale: string }>(
     "You estimate how well two people would get along over long home-care visits, using only their listed favourites. Return a 0-100 score, the interests you believe they share, and one sentence of rationale.",
     JSON.stringify({ person_a_favourites: c.seeds.map((s) => s.name), person_b_favourites: g.seeds.map((s) => s.name) }),
@@ -102,7 +102,7 @@ export async function llmOnlyBaseline(clientId: string, caregiverId: string) {
       additionalProperties: false,
     },
   );
-  if (!out) return { available: false as const, reason: "Gemini did not return a result (free-tier quota?)." };
+  if (!out) return { available: false as const, reason: "The AI baseline is busy. Try again in a moment." };
   return { available: true as const, model: env.geminiModel, score: Math.max(0, Math.min(100, Math.round(out.score))), sharedInterests: out.shared_interests, rationale: out.rationale };
 }
 

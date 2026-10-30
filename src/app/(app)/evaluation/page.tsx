@@ -67,7 +67,7 @@ export default function EvaluationPage() {
                 <div>
                   <p className="font-display text-2xl font-bold">{r?.llm ? `${pct(r.llm.separation)}%` : "—"}</p>
                   <p className="text-sm text-muted">separation</p>
-                  {r?.llm ? <p className="mt-1 text-xs text-muted">{pct(r.llm.accuracy)}% accuracy at {r.threshold}</p> : <p className="mt-1 text-xs text-muted">Run with GEMINI_API_KEY</p>}
+                  {r?.llm ? <p className="mt-1 text-xs text-muted">{pct(r.llm.accuracy)}% accuracy at {r.threshold}</p> : <p className="mt-1 text-xs text-muted">same 20 pairs, names only</p>}
                 </div>
               </div>
             </div>

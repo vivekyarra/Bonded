@@ -1,7 +1,7 @@
 import { env, hasLlm } from "../env";
 
 /**
- * Minimal Google Gemini client (REST `models.generateContent`, free tier friendly).
+ * Minimal Google Gemini client (REST `models.generateContent`).
  * The LLM only orchestrates and phrases: it never supplies an entity, a person or a score.
  * Without GEMINI_API_KEY every caller falls back to deterministic code paths.
  */
@@ -131,7 +131,9 @@ export async function llmJson<T>(system: string, user: string, schema: Record<st
     const res = await generate({ system, contents: [{ role: "user", parts: [{ text: user }] }], jsonSchema: schema });
     if (res.finishReason && !["STOP", "MAX_TOKENS"].includes(res.finishReason)) return null;
     return JSON.parse(textOf(res.content)) as T;
-  } catch {
+  } catch (err) {
+    // Server-side only; the message comes from Gemini and never contains the key.
+    console.warn(`llmJson: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }

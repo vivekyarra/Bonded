@@ -2,7 +2,7 @@ import type { SeedInput } from "../compat/types";
 import type { EntityKind } from "../qloo/types";
 
 /**
- * Hand-written taste archetypes used to give synthetic people realistic favourites.
+ * Hand-written taste archetypes used to give agency profiles realistic favourites.
  * These are only *inputs*: every name is resolved through Qloo /search at profile-build
  * time, and anything Qloo cannot find is dropped (and reported as unresolved).
  */
@@ -138,7 +138,7 @@ export function drawSeeds(rand: () => number, archetypes: Archetype[], count: nu
       for (const name of names) pool.push({ name, kind, source: "intake" });
     }
   }
-  // Fisher–Yates with the seeded RNG, then make sure music is always represented.
+  // Fisher–Yates with the deterministic RNG, then make sure music is always represented.
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
