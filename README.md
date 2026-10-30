@@ -144,7 +144,7 @@ Offline development: `QLOO_MODE=fixture npm run dev` uses a small deterministic 
 
 ### Deploy (Vercel)
 
-1. Import the repo in Vercel (framework: Next.js). Vercel runs `npm run vercel-build`, which warms the Qloo cache (about 1–3 minutes) and then builds. If Qloo is unreachable during the build, it still deploys and calls Qloo live.
+1. Import the repo in Vercel (framework: Next.js). Vercel runs `npm run vercel-build`, which warms the Qloo cache for at most 45 seconds (set `WARM_CACHE_BUDGET_S` to change it, `0` to skip) and then builds. Anything not warmed in time, or not reachable during the build, is fetched from Qloo live and cached at runtime.
 2. Add the `QLOO_API_KEY` and `GEMINI_API_KEY` environment variables, then redeploy so the build can warm the cache.
 3. Optional: add the same two values as **GitHub Actions secrets** and run the **Live Qloo check & evaluation** workflow. It verifies the live API and commits only the evaluation scores, never Qloo response data.
 

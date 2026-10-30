@@ -27,19 +27,36 @@ import { pairScore, personProfile, quickPairScore } from "../src/lib/service/eng
 import { autoMatchView } from "../src/lib/service/views";
 import { tryIt } from "../src/lib/service/tryit";
 
+const optional = process.argv.includes("--optional");
+
+// At deploy time (--optional) the warm-up gets a time budget so a slow or rate-limited Qloo
+// never stalls the build. What was fetched by then ships; the rest is fetched live at runtime.
+// WARM_CACHE_BUDGET_S overrides it (0 skips the warm-up); without --optional it is unlimited.
+const budgetS = Number(process.env.WARM_CACHE_BUDGET_S ?? (optional ? 45 : NaN));
+const deadline = Number.isFinite(budgetS) ? Date.now() + budgetS * 1000 : Infinity;
+
 const step = async (label: string, fn: () => Promise<unknown>) => {
   const t = Date.now();
   process.stdout.write(`• ${label}… `);
+  const left = deadline - t;
+  if (left <= 0) {
+    console.log("skipped (time budget used)");
+    return;
+  }
+  let timer: NodeJS.Timeout | undefined;
+  const outOfTime = new Promise<"timeout">((r) => {
+    if (Number.isFinite(left)) timer = setTimeout(() => r("timeout"), left);
+  });
   try {
-    await fn();
-    console.log(`${((Date.now() - t) / 1000).toFixed(1)} s`);
+    const res = await Promise.race([fn(), outOfTime]);
+    console.log(res === "timeout" ? "stopped (time budget used)" : `${((Date.now() - t) / 1000).toFixed(1)} s`);
   } catch (err) {
     // Later steps still run; whatever was fetched so far is kept in the bundle.
     console.log(`skipped (${err instanceof Error ? err.message : err})`);
+  } finally {
+    clearTimeout(timer);
   }
 };
-
-const optional = process.argv.includes("--optional");
 
 async function main() {
   if (optional && !isFixtureMode() && !env.qlooApiKey) {
@@ -120,11 +137,14 @@ async function main() {
   if (unresolved.length) console.log(`Favourites Qloo could not resolve (dropped, never guessed): ${unresolved.join("; ")}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  if (optional) {
-    console.warn("warm-cache failed; continuing the build without a bundled cache.");
-    return;
-  }
-  process.exit(1);
-});
+main()
+  // Exit explicitly: a step stopped at the budget may still have Qloo requests in flight.
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    if (optional) {
+      console.warn("warm-cache failed; continuing the build without a bundled cache.");
+      process.exit(0);
+    }
+    process.exit(1);
+  });
