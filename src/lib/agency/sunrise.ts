@@ -321,7 +321,7 @@ function genClient(i: number, rand: () => number): Client {
 
 const OPEN_GENERATED = new Set(["c07", "c08", "c09"]);
 /** Story caregivers kept free of regular schedules so they can cover open shifts and call-outs. */
-const FLOATERS = new Set(["cg02", "cg03", "cg04", "cg05"]);
+const FLOATERS = new Set(["cg02", "cg03", "cg04", "cg05", "cg40"]);
 
 function buildShifts(schedules: RecurringSchedule[], start: string, days: number): Shift[] {
   const shifts: Shift[] = [];
@@ -415,6 +415,17 @@ export function buildSunrise(today = phoenixToday()): Agency {
     ...structuredClone(STORY_CAREGIVERS),
     ...Array.from({ length: 33 }, (_, i) => genCaregiver(i, rand)),
   ].map((c, i) => ({ ...c, phoneMock: `(602) 555-01${String(i).padStart(2, "0")}` }));
+  // Health-demo re-match candidate for Eleanor: a Mesa mystery-and-standards fan kept free of regulars.
+  const grace = caregivers.find((c) => c.id === "cg40")!;
+  Object.assign(grace, {
+    home: { lat: 33.405, lng: -111.845, area: "Mesa" },
+    skills: [...new Set([...grace.skills, "medication_reminders", "companionship", "meal_prep"])],
+    maxHours: 32,
+    petsOk: true,
+    availability: everyDay(["morning", "afternoon"]),
+    seeds: [s("Tony Bennett", "artist"), s("Norah Jones", "artist"), s("Only Murders in the Building", "tv_show"), s("Knives Out", "movie"), s("Murder on the Orient Express", "book")],
+    blurb: "Book-club regular; never misses a mystery.",
+  });
   const clients: Client[] = [...structuredClone(STORY_CLIENTS), ...Array.from({ length: 54 }, (_, i) => genClient(i, rand))];
 
   // Open schedules on the Match Board should be coverable by someone.
@@ -445,7 +456,7 @@ export function buildSunrise(today = phoenixToday()): Agency {
   const feedback: VisitFeedback[] = [];
   for (const sc of schedules) {
     if (!sc.caregiverId || ["c05", "c06"].includes(sc.clientId)) continue;
-    const pattern = Array.from({ length: 5 }, () => (rand() < 0.75 ? 1 : 0) as 1 | 0);
+    const pattern = Array.from({ length: 5 }, (_, k) => (k >= 3 || rand() < 0.8 ? 1 : 0) as 1 | 0);
     feedback.push(...feedbackFor(sc.clientId, sc.caregiverId, today, pattern, []));
   }
   // Health demo: Eleanor & Kayla trending down.

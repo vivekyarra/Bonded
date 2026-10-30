@@ -49,9 +49,10 @@ function diskDir(): string {
 
 export type CacheTier = "memory" | "bundle" | "disk";
 
-export function cacheGet(key: string): { entry: CacheEntry; tier: CacheTier } | null {
+export function cacheGet(key: string, memoryOnly = false): { entry: CacheEntry; tier: CacheTier } | null {
   const m = memory.get(key);
   if (m) return { entry: m, tier: "memory" };
+  if (memoryOnly) return null;
   const b = loadBundle()[key];
   if (b) {
     memory.set(key, b);
@@ -70,8 +71,9 @@ export function cacheGet(key: string): { entry: CacheEntry; tier: CacheTier } | 
   return null;
 }
 
-export function cacheSet(key: string, entry: CacheEntry): void {
+export function cacheSet(key: string, entry: CacheEntry, memoryOnly = false): void {
   memory.set(key, entry);
+  if (memoryOnly) return;
   try {
     const dir = diskDir();
     fs.mkdirSync(dir, { recursive: true });

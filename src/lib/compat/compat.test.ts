@@ -139,3 +139,14 @@ describe("engine over the offline fixture graph", () => {
     expect(p.seeds).toHaveLength(0);
   });
 });
+
+describe("Qloo outage", () => {
+  it("throws instead of returning an empty profile when every Qloo call fails", async () => {
+    const down = new QlooClient(async () => {
+      throw new Error("Qloo down");
+    }, "network");
+    await expect(
+      buildProfile(down, { personType: "guest", personId: "x", seeds: [{ name: "Selena outage probe", kind: "artist" }] }),
+    ).rejects.toThrow("Qloo down");
+  });
+});

@@ -60,10 +60,12 @@ export class QlooClient {
   /** Cached GET. Every Qloo response Bonded uses passes through here. */
   async get(path: string, params: QlooParams): Promise<QlooResult<unknown>> {
     const key = cacheKey(`${this.label}:${path}`, params);
-    const hit = cacheGet(key);
+    // Fixture responses are never persisted, so a changed test graph can't go stale on disk.
+    const memoryOnly = this.label === "fixture";
+    const hit = cacheGet(key, memoryOnly);
     if (hit) return { data: hit.entry.response, cached: true, source: hit.tier };
     const response = await limit(() => this.transport(path, params));
-    cacheSet(key, { endpoint: path, params, response, fetchedAt: new Date().toISOString() });
+    cacheSet(key, { endpoint: path, params, response, fetchedAt: new Date().toISOString() }, memoryOnly);
     return { data: response, cached: false, source: this.label };
   }
 

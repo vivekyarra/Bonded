@@ -19,8 +19,8 @@ export interface HealthFlag {
   labels: HealthLabel[];
   evidence: { date: string; by: string; rating: number; note?: string; labels: HealthLabel[] }[];
   suggestedAction:
-    | { kind: "rematch"; caregiverId: string; caregiverName: string; taste: number; currentTaste: number; bridges: string[] }
-    | { kind: "refresh_kit"; freshBridges: string[] }
+    | { kind: "rematch"; caregiverId: string; caregiverName: string; taste: number; currentTaste: number; bridges: { name: string; domain: string }[] }
+    | { kind: "refresh_kit"; freshBridges: { name: string; domain: string }[] }
     | { kind: "check_in" };
 }
 
@@ -118,7 +118,7 @@ export function listMatches(): HealthMatch[] {
       caregiverName: caregiverName(q.caregiver(sc.caregiverId!)),
       ratings,
       trend: Number(trend.toFixed(3)),
-      flagged: (trend < -0.08 && recentAvg <= 0) || declines >= 2 || recentAvg <= 0,
+      flagged: (trend < -0.08 && recentAvg <= 0) || declines >= 2 || recentAvg < 0,
     };
   });
 }
@@ -149,20 +149,22 @@ export async function healthReview(): Promise<{ flags: HealthFlag[]; matches: He
       const { candidates: alts } = await rankForSchedule(freed, sc.id, quickPairScore);
       const current = await quickPairScore(m.clientId, m.caregiverId);
       const best = alts.find((a) => a.caregiverId !== m.caregiverId);
-      if (best)
+      // Only suggest a re-match that is clearly better on taste; otherwise a human check-in.
+      if (best && best.taste >= current.tasteScore + 5)
         suggestedAction = {
           kind: "rematch",
           caregiverId: best.caregiverId,
           caregiverName: caregiverName(byId(agency).caregiver(best.caregiverId)),
           taste: best.taste,
           currentTaste: current.tasteScore,
-          bridges: best.bridges.slice(0, 3).map((b) => b.name),
+          bridges: best.bridges.slice(0, 3).map((b) => ({ name: b.name, domain: b.domain })),
         };
     } else if (all.includes("stale_conversation")) {
       const p = await pairScore(m.clientId, m.caregiverId);
       // Fresh bridges: skip the two the pair most likely already uses.
-      const fresh = p.bridges.slice(2).map((b) => b.name);
-      suggestedAction = { kind: "refresh_kit", freshBridges: fresh.length ? fresh : p.bridges.map((b) => b.name) };
+      const pick = (list: typeof p.bridges) => list.map((b) => ({ name: b.name, domain: b.domain }));
+      const fresh = pick(p.bridges.slice(2));
+      suggestedAction = { kind: "refresh_kit", freshBridges: fresh.length ? fresh : pick(p.bridges) };
     }
     flags.push({
       matchKey: m.matchKey,

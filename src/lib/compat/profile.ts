@@ -26,6 +26,7 @@ export async function resolveSeeds(
   seeds: SeedInput[],
 ): Promise<{ resolved: ResolvedSeed[]; unresolved: string[]; cached: boolean }> {
   let cached = true;
+  let firstError: unknown = null;
   const results = await Promise.all(
     seeds.map(async (s) => {
       try {
@@ -35,12 +36,15 @@ export async function resolveSeeds(
         return hit
           ? ({ qlooId: hit.id, name: hit.name, kind: s.kind, input: s.name, source: s.source ?? "intake" } as ResolvedSeed)
           : null;
-      } catch {
+      } catch (err) {
         cached = false;
+        firstError ??= err;
         return null;
       }
     }),
   );
+  // If Qloo failed for every seed, surface the outage instead of an empty profile.
+  if (firstError && results.every((r) => r === null)) throw firstError;
   const resolved: ResolvedSeed[] = [];
   const unresolved: string[] = [];
   const seen = new Set<string>();
@@ -70,6 +74,8 @@ export async function expandProfile(
   const domains = emptyDomains();
   if (!seeds.length) return { domains, cached: true };
   let cached = true;
+  let failures = 0;
+  let firstError: unknown = null;
   const ids = seeds.map((s) => s.qlooId);
   await Promise.all(
     DOMAINS.map(async (domain) => {
@@ -92,8 +98,10 @@ export async function expandProfile(
             explainedBy: e.explainedBy,
           };
         }
-      } catch {
+      } catch (err) {
         cached = false;
+        failures++;
+        firstError ??= err;
       }
       // A person's own favourite always belongs in their profile at full affinity.
       for (const s of seeds) {
@@ -110,6 +118,7 @@ export async function expandProfile(
       }
     }),
   );
+  if (failures === DOMAINS.length) throw firstError;
   return { domains, cached };
 }
 
