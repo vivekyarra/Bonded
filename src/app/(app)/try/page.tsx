@@ -1,7 +1,7 @@
 "use client";
 import { BookOpen, Check, Clapperboard, MapPin, MessageCircleHeart, Music2, Plus, RotateCcw, Sparkles, Tv, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Avatar, BridgeChip, ErrorState, ScoreRing, Skeleton } from "@/components/ui";
+import { Avatar, BridgeChip, ErrorState, PageHeader, ScoreRing, Skeleton } from "@/components/ui";
 import { fetchJson, post } from "@/components/useJson";
 
 type Kind = "artist" | "movie" | "tv_show" | "book" | "place";
@@ -82,7 +82,7 @@ function FavInput({ value, onChange, onRemove, index }: { value: Fav; onChange: 
             role="radio"
             aria-checked={value.kind === k}
             onClick={() => onChange({ kind: k, query: "", picked: null })}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${value.kind === k ? "bg-teal text-white shadow-sm dark:text-bg" : "text-muted hover:bg-ink/[0.05] hover:text-ink"}`}
+            className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${value.kind === k ? "bg-teal text-white shadow-sm dark:text-bg" : "text-muted hover:bg-ink/[0.05] hover:text-ink"}`}
           >
             <Icon size={13} /> {label}
           </button>
@@ -99,7 +99,7 @@ function FavInput({ value, onChange, onRemove, index }: { value: Fav; onChange: 
         </label>
         <input
           id={`fav-${index}`}
-          className={`w-full rounded-2xl border bg-surface/80 px-4 py-3 text-[16px] outline-none transition placeholder:text-muted/70 focus:border-teal focus:ring-4 focus:ring-teal/15 ${value.picked ? "border-teal/60 font-medium" : "border-ink/10"}`}
+          className={`w-full rounded-xl border bg-surface px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-muted/70 focus:border-teal focus:ring-4 focus:ring-teal/15 ${value.picked ? "border-teal/60 font-medium" : "border-ink/10"}`}
           placeholder={meta.placeholder}
           value={value.picked ? value.picked.name : value.query}
           maxLength={80}
@@ -184,17 +184,12 @@ export default function TryPage() {
   const best = res?.top[0];
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <header className="mb-8 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-gradient-to-br from-teal via-violet to-coral text-white shadow-lift">
-          <Sparkles size={26} />
-        </span>
-        <h1 className="mt-4 text-[32px] sm:text-[40px]">Who would you click with?</h1>
-        <p className="mt-1 text-muted">Pick three favourites. We'll find your match among 60 clients.</p>
-      </header>
+    <div>
+      <PageHeader title="Who would you click with?" subtitle="Pick three favourites. We'll find your match among 60 clients. Nothing is stored." />
 
       {!res && (
-        <div className="glass mx-auto max-w-2xl animate-rise space-y-2.5 p-3 sm:p-4">
+        <div className="glass animate-rise p-3 sm:p-4">
+          <div className="grid gap-2.5 md:grid-cols-3">
           {favs.map((f, i) => (
             <FavInput
               key={i}
@@ -204,14 +199,15 @@ export default function TryPage() {
               onRemove={favs.length > 3 ? () => setFavs((all) => all.filter((_, j) => j !== i)) : undefined}
             />
           ))}
-          <div className="flex flex-wrap items-center gap-2 pt-1.5">
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
             {favs.length < 6 && (
               <button className="btn-ghost" onClick={() => setFavs((all) => [...all, { kind: "book", query: "", picked: null }])}>
                 <Plus size={15} /> Add
               </button>
             )}
-            <span className="text-xs text-muted">{picked}/3 picked · nothing is stored</span>
-            <button className="btn-primary ml-auto px-6 py-3" onClick={go} disabled={!ready || loading}>
+            <span className="text-xs text-muted">{picked}/3 picked</span>
+            <button className="btn-primary ml-auto px-5" onClick={go} disabled={!ready || loading}>
               <Sparkles size={16} /> {loading ? "Matching…" : "Find my match"}
             </button>
           </div>
@@ -219,13 +215,13 @@ export default function TryPage() {
       )}
 
       {loading && (
-        <div className="mx-auto mt-6 max-w-2xl space-y-3" role="status" aria-label="Matching">
+        <div className="mt-4 space-y-3" role="status" aria-label="Matching">
           <Skeleton className="h-48 rounded-3xl" />
           <Skeleton className="h-20 rounded-3xl" />
         </div>
       )}
       {error && (
-        <div className="mx-auto mt-6 max-w-2xl">
+        <div className="mt-4">
           <ErrorState error={error} onRetry={go} />
         </div>
       )}

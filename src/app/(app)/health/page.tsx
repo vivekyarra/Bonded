@@ -51,7 +51,7 @@ export default function HealthPage() {
   const sorted = data ? [...data.matches].sort((a, b) => Number(b.flagged) - Number(a.flagged) || a.trend - b.trend) : [];
 
   return (
-    <div>
+    <div className="fit-page">
       <PageHeader
         title="Health"
         subtitle={data ? `${data.flags.length} relationships need a look · ${data.matches.length} active` : "Weekly relationship review"}
@@ -75,7 +75,7 @@ export default function HealthPage() {
       )}
 
       {data && (
-        <div className="grid gap-5 lg:h-[calc(100dvh-264px)] lg:min-h-[480px] lg:grid-cols-[320px_1fr]">
+        <div className="fit-fill grid gap-4 lg:grid-cols-[320px_1fr]">
           <section aria-label="Active matches" className={`glass overflow-hidden p-2 lg:flex lg:min-h-0 lg:flex-col ${mobileDetail ? "hidden lg:flex" : ""}`}>
             <ul className="max-h-[640px] overflow-y-auto lg:max-h-none lg:min-h-0 lg:flex-1">
               {sorted.map((m) => {

@@ -85,10 +85,11 @@ export function Tour() {
 
   const last = idx === TOUR.length - 1;
   return (
-    // Floats above the page; the app frame reserves bottom space on laptops so it never covers content.
-    <div className="pointer-events-none fixed inset-x-0 bottom-[92px] z-40 flex justify-center px-3 lg:bottom-5 lg:pl-[244px]">
-      <div role="region" aria-label="Guided tour" className="glass-strong pointer-events-auto flex w-full max-w-[640px] animate-sheet items-center gap-3 rounded-[22px] p-2 pl-3 shadow-lift">
-        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-teal font-display text-sm font-bold text-white dark:text-bg sm:flex">
+    // Phones: floats above the tab bar. Laptops: the same floating card, but in its own row
+    // under the page, so it can never cover a form or button.
+    <div className="pointer-events-none fixed inset-x-0 bottom-[92px] z-40 flex justify-center px-3 lg:pointer-events-auto lg:static lg:z-auto lg:shrink-0 lg:px-8 lg:pb-3 lg:pt-1">
+      <div role="region" aria-label="Guided tour" className="glass-strong pointer-events-auto flex w-full max-w-[640px] animate-sheet items-center gap-3 rounded-[20px] p-1.5 pl-2.5 shadow-lift">
+        <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal font-display text-sm font-bold text-white dark:text-bg sm:flex">
           {idx + 1}
         </span>
         <div className="min-w-0 flex-1">
@@ -105,7 +106,7 @@ export function Tour() {
               {idx + 1}/{TOUR.length}
             </span>
           </div>
-          <p className="mt-1 truncate text-[15px] font-semibold">{step.title}</p>
+          <p className="mt-0.5 truncate text-[14.5px] font-semibold leading-tight">{step.title}</p>
           <p className="hidden truncate text-xs text-muted sm:block">{step.hint}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">

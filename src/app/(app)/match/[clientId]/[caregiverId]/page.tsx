@@ -56,9 +56,9 @@ function Bar({ value, tone }: { value: number | null; tone: "teal" | "coral" }) 
   );
 }
 
-function Seeds({ seeds, unresolved }: { seeds: Seed[]; unresolved: string[] }) {
+function Seeds({ seeds, unresolved, end }: { seeds: Seed[]; unresolved: string[]; end?: boolean }) {
   return (
-    <ul className="flex flex-wrap gap-1.5">
+    <ul className={`flex flex-wrap gap-1.5 ${end ? "sm:justify-end" : ""}`}>
       {seeds.map((s) => (
         <li key={s.qlooId} className="rounded-full bg-ink/[0.05] px-2.5 py-1 text-xs" title={`Qloo ID ${s.qlooId}`}>
           {s.name}
@@ -125,8 +125,8 @@ export default function MatchDetail({ params }: { params: { clientId: string; ca
   }
 
   return (
-    <div className="fit-page space-y-4">
-      <Link href="/board" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
+    <div className="fit-page flex flex-col gap-3">
+      <Link href="/board" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink lg:hidden">
         <ArrowLeft size={16} /> Matches
       </Link>
       {d.loading && <DetailSkeleton />}
@@ -142,40 +142,34 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
   const gFirst = caregiver.name.split(" ")[0];
   return (
     <>
-      <section className="glass animate-rise shrink-0 overflow-hidden p-4 sm:px-6">
-        <div className="flex items-center gap-3 sm:gap-6">
-          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-44">
-            <Avatar name={client.name} size={48} ring="teal" />
-            <h1 className="mt-1.5 max-w-full truncate text-lg sm:text-xl">
-              <span className="sm:hidden">{cFirst}</span>
-              <span className="hidden sm:inline">{client.name}</span>
-            </h1>
+      {/* One compact row: each person with their favourites, the taste score between them. */}
+      <section className="glass animate-rise grid shrink-0 items-center gap-4 px-4 py-3.5 sm:grid-cols-[1fr_auto_1fr] sm:px-5">
+        <div className="flex min-w-0 items-start gap-3">
+          <Avatar name={client.name} size={44} ring="teal" />
+          <div className="min-w-0">
+            <h1 className="truncate text-lg leading-tight">{client.name}</h1>
             <p className="text-xs text-muted">
-              {client.age} · {client.area}
+              {client.age} · {client.area} · client
             </p>
-          </div>
-          <div className="relative flex flex-1 items-center justify-center">
-            <div className="bridge-line absolute inset-x-0 h-[3px] rounded-full opacity-60" />
-            <span className="relative rounded-full bg-surface p-1">
-              <ScoreRing value={score.tasteScore} size={72} stroke={7} />
-            </span>
-          </div>
-          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-44">
-            <Avatar name={caregiver.name} size={48} ring="coral" />
-            <h2 className="mt-1.5 max-w-full truncate text-lg sm:text-xl">{caregiver.name}</h2>
-            <p className="text-xs text-muted">
-              {caregiver.age} · {caregiver.area}
-            </p>
+            <div className="mt-2">
+              <Seeds seeds={client.seeds} unresolved={client.unresolved} />
+            </div>
           </div>
         </div>
-        <div className="mt-3 grid gap-4 border-t border-line pt-3 sm:grid-cols-2">
-          <div>
-            <p className="label mb-2">{cFirst} loves</p>
-            <Seeds seeds={client.seeds} unresolved={client.unresolved} />
-          </div>
-          <div>
-            <p className="label mb-2">{gFirst} loves</p>
-            <Seeds seeds={caregiver.seeds} unresolved={caregiver.unresolved} />
+        <div className="flex flex-col items-center px-2">
+          <ScoreRing value={score.tasteScore} size={64} stroke={6} />
+          <span className="mt-1 text-[11.5px] font-medium text-muted">taste match</span>
+        </div>
+        <div className="flex min-w-0 items-start gap-3 sm:flex-row-reverse sm:text-right">
+          <Avatar name={caregiver.name} size={44} ring="coral" />
+          <div className="min-w-0">
+            <h2 className="truncate text-lg leading-tight">{caregiver.name}</h2>
+            <p className="text-xs text-muted">
+              {caregiver.age} · {caregiver.area} · caregiver
+            </p>
+            <div className="mt-2">
+              <Seeds seeds={caregiver.seeds} unresolved={caregiver.unresolved} end />
+            </div>
           </div>
         </div>
       </section>

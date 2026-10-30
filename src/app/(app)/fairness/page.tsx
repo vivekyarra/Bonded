@@ -49,7 +49,7 @@ export default function FairnessPage() {
       )}
 
       {f && s && r && (
-        <div className="fit-fill grid gap-4 xl:grid-cols-[1.15fr_1fr]">
+        <div className="fit-fill grid gap-4 lg:grid-cols-[1.15fr_1fr]">
           <section className="glass fit-scroll h-fit max-h-full animate-rise">
             <div className={`flex flex-wrap items-center gap-3 bg-gradient-to-r px-5 py-3.5 text-white dark:text-bg ${s.cls}`}>
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 dark:bg-black/10">

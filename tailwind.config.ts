@@ -28,7 +28,7 @@ const config: Config = {
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       borderRadius: { xl2: "1.25rem", "3xl": "1.25rem" },
-      screens: { fit: { raw: "(min-width: 1024px) and (min-height: 600px)" } },
+      screens: { fit: { raw: "(min-width: 1024px) and (min-height: 480px)" } },
       boxShadow: {
         card: "0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03)",
         glass: "0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03)",

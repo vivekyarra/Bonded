@@ -136,7 +136,7 @@ h3 {
 
 /* Laptop screens: a page fills the viewport and only its long panels scroll.
    Short windows fall back to normal page scrolling. */
-@media (min-width: 1024px) and (min-height: 600px) {
+@media (min-width: 1024px) and (min-height: 480px) {
   .fit-page {
     display: flex;
     flex-direction: column;
@@ -146,6 +146,10 @@ h3 {
   .fit-fill {
     flex: 1 1 0%;
     min-height: 0;
+  }
+  /* A filling grid gets one row the height of the space, so its panels scroll inside it. */
+  .fit-fill.grid {
+    grid-template-rows: minmax(0, 1fr);
   }
   .fit-scroll {
     min-height: 0;

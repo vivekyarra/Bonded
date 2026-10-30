@@ -174,7 +174,7 @@ export default function CalloutPage() {
   const idle = !running && !result && !error;
 
   return (
-    <div>
+    <div className="fit-page">
       <PageHeader
         title="Call-outs"
         subtitle="Rosa can't make Dolores's 9am visit tomorrow"
@@ -209,7 +209,7 @@ export default function CalloutPage() {
       )}
 
       {!idle && !error && (
-        <div className="grid gap-5 lg:h-[calc(100dvh-264px)] lg:min-h-[480px] lg:grid-cols-[1fr_1.05fr]">
+        <div className="fit-fill grid gap-4 lg:grid-cols-[1fr_1.05fr]">
           <section aria-label="Agent trace" className="glass flex min-h-0 flex-col p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-[17px]">Agent</h2>
@@ -254,7 +254,7 @@ export default function CalloutPage() {
             )}
           </section>
 
-          <section aria-label="Candidates" className="min-h-0 space-y-5 lg:overflow-y-auto lg:pr-1">
+          <section aria-label="Candidates" className="min-h-0 space-y-4 lg:overflow-y-auto lg:pr-1">
             {!result && running && (
               <div className="glass space-y-3 p-5">
                 {Array.from({ length: 4 }, (_, i) => (

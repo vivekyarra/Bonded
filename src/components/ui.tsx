@@ -209,7 +209,7 @@ export function Info({ children, side = "bottom" }: { children: ReactNode; side?
 
 export function PageHeader({ title, subtitle, actions, info }: { title: string; subtitle?: ReactNode; actions?: ReactNode; info?: ReactNode }) {
   return (
-    <header className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-4">
+    <header className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
         <h1 className="flex items-center gap-2 text-[24px] leading-tight sm:text-[26px]">
           {title}
@@ -286,7 +286,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
                 <BatteryFull size={20} strokeWidth={2} />
               </span>
             </div>
-            <div className="no-scrollbar max-h-[680px] overflow-y-auto px-4 pb-8 pt-1 fit:max-h-[calc(100dvh-380px)]">{children}</div>
+            <div className="no-scrollbar max-h-[680px] overflow-y-auto px-4 pb-8 pt-1 fit:max-h-[calc(100dvh-232px)]">{children}</div>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-6 items-end justify-center bg-gradient-to-t from-bg to-transparent pb-2" aria-hidden>
               <span className="h-[5px] w-32 rounded-full bg-ink/80" />
             </div>

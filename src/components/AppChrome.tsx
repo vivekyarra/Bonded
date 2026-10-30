@@ -24,12 +24,18 @@ const NAV = [
 ];
 const GROUPS = ["Scheduling", "Insights"] as const;
 
-/** Breadcrumb trail for the top bar. */
-function crumbs(path: string): string[] {
-  if (path.startsWith("/match")) return ["Matches", "Match detail"];
-  if (path.startsWith("/kit")) return ["Matches", "Bridge Kit"];
+/** Breadcrumb trail for the top bar; every crumb but the last is a link. */
+function crumbs(path: string): { label: string; href: string }[] {
+  const [, , a, b] = path.split("/");
+  if (path.startsWith("/match")) return [{ label: "Matches", href: "/board" }, { label: "Match detail", href: path }];
+  if (path.startsWith("/kit"))
+    return [
+      { label: "Matches", href: "/board" },
+      { label: "Match detail", href: `/match/${a}/${b}` },
+      { label: "Bridge Kit", href: path },
+    ];
   const n = NAV.find((x) => path.startsWith(x.href));
-  return n ? [n.label] : [];
+  return n ? [{ label: n.label, href: n.href }] : [];
 }
 
 export function Logo({ compact }: { compact?: boolean }) {
@@ -71,7 +77,7 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
           </div>
 
           {/* Workspace */}
-          <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
+          <div className="flex items-center gap-2.5 px-4 pb-2.5 pt-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-coralsoft text-[12px] font-bold text-coralink">SH</span>
             <div className="min-w-0">
               <p className="truncate text-[13.5px] font-semibold leading-tight">Sunrise Home Care</p>
@@ -90,7 +96,7 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
             </button>
           </div>
 
-          <nav aria-label="Main" className="mt-4 flex-1 space-y-4 overflow-y-auto px-3">
+          <nav aria-label="Main" className="mt-3 flex-1 space-y-3 overflow-y-auto px-3">
             {GROUPS.map((g) => (
               <div key={g}>
                 <p className="px-2.5 pb-1 text-[11.5px] font-semibold text-muted">{g}</p>
@@ -121,19 +127,18 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
             </div>
           </nav>
 
-          {/* Signed-in scheduler */}
-          <div className="border-t border-line p-3">
+          {/* Signed-in scheduler, with the light / dark switch */}
+          <div className="border-t border-line px-3 py-2.5">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3a4458] text-[12px] font-semibold text-white">AR</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold leading-tight">Ana Ruiz</p>
-                <p className="truncate text-[12px] text-muted">Scheduler · demo</p>
+                <p className="truncate text-[11.5px] text-muted" title="All people are fictional. Messages are simulated.">
+                  Scheduler · fictional demo
+                </p>
               </div>
+              <ThemeToggle compact />
             </div>
-            <div className="mt-3">
-              <ThemeToggle />
-            </div>
-            <p className="mt-2.5 px-0.5 text-[11px] leading-snug text-muted">All people are fictional. Messages are simulated.</p>
           </div>
         </aside>
 
@@ -152,9 +157,17 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[13px]">
               <span className="text-muted">Sunrise Home Care</span>
               {trail.map((c, i) => (
-                <span key={c} className="flex items-center gap-1.5">
+                <span key={c.label} className="flex items-center gap-1.5">
                   <ChevronRight size={13} className="text-muted/70" />
-                  <span className={i === trail.length - 1 ? "font-medium text-ink" : "text-muted"}>{c}</span>
+                  {i === trail.length - 1 ? (
+                    <span className="font-medium text-ink" aria-current="page">
+                      {c.label}
+                    </span>
+                  ) : (
+                    <Link href={c.href} className="text-muted transition hover:text-ink">
+                      {c.label}
+                    </Link>
+                  )}
                 </span>
               ))}
             </nav>
@@ -168,12 +181,12 @@ export function AppChrome({ children, flags }: { children: ReactNode; flags: Chr
           </div>
 
           <div data-scroll className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            {/* Bottom padding on laptops keeps the floating tour bar clear of the page. */}
-            <main className="mx-auto max-w-[1240px] px-4 pb-44 pt-5 sm:px-6 lg:h-full lg:px-8 lg:pb-[104px] lg:pt-6">{children}</main>
+            <main className="mx-auto max-w-[1240px] px-4 pb-44 pt-5 sm:px-6 lg:h-full lg:px-8 lg:pb-3 lg:pt-5">{children}</main>
           </div>
+
+          <Tour />
         </div>
       </div>
-      <Tour />
       <CommandPalette />
 
       {/* Mobile tab bar */}
