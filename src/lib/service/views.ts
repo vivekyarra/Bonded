@@ -105,3 +105,22 @@ export async function llmOnlyBaseline(clientId: string, caregiverId: string) {
   if (!out) return { available: false as const, reason: "Claude did not return a result." };
   return { available: true as const, score: Math.max(0, Math.min(100, Math.round(out.score))), sharedInterests: out.shared_interests, rationale: out.rationale };
 }
+
+/** Match Board left column: open recurring schedules (no Qloo calls). */
+export function boardView() {
+  const agency = getAgency();
+  const q = byId(agency);
+  const open = agency.schedules.filter((s) => !s.caregiverId);
+  return {
+    agency: { name: agency.name, city: agency.city, caregivers: agency.caregivers.length, clients: agency.clients.length, today: agency.demo.today },
+    open: open.map((s) => {
+      const c = q.client(s.clientId);
+      return {
+        scheduleId: s.id,
+        schedule: scheduleLabel(s),
+        client: { id: c.id, name: clientName(c), age: c.age, area: c.home.area, needs: c.requiredSkills, favourites: c.seeds.map((x) => x.name) },
+      };
+    }),
+    demo: agency.demo,
+  };
+}
