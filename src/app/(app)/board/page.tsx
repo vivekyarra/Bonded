@@ -70,7 +70,7 @@ export default function BoardPage() {
   const approved = Object.values(decisions).filter((d) => d === "approved").length;
 
   return (
-    <div>
+    <div className="fit-page">
       <PageHeader
         title="Matches"
         subtitle={board.data ? `${board.data.open.length} open schedules · ${board.data.agency.caregivers} caregivers` : "Open schedules"}
@@ -88,8 +88,8 @@ export default function BoardPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        <section aria-label="Open schedules" className="glass h-fit overflow-hidden p-2">
+      <div className="fit-fill grid gap-5 lg:grid-cols-[272px_1fr]">
+        <section aria-label="Open schedules" className="glass fit-scroll h-fit max-h-full p-2">
           <p className="label px-3 pb-1 pt-2">Open schedules</p>
           {board.loading && (
             <div className="space-y-2 p-2">
@@ -110,14 +110,14 @@ export default function BoardPage() {
               const p = proposals?.find((x) => x.scheduleId === o.scheduleId);
               const d = decisions[o.scheduleId];
               return (
-                <li key={o.scheduleId} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-ink/[0.04]">
-                  <Avatar name={o.client.name} size={42} />
+                <li key={o.scheduleId} className="flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-ink/[0.04]">
+                  <Avatar name={o.client.name} size={36} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="truncate text-[16px] font-semibold">{o.client.name}</p>
+                      <p className="truncate text-[14.5px] font-semibold">{o.client.name}</p>
                       <span className="shrink-0 text-[12.5px] text-muted">{o.client.age}</span>
                     </div>
-                    <p className="truncate text-[14px] text-muted">{d === "approved" && p?.caregiver ? `✓ ${p.caregiver.name}` : o.schedule}</p>
+                    <p className="truncate text-[13px] text-muted">{d === "approved" && p?.caregiver ? `✓ ${p.caregiver.name}` : o.schedule}</p>
                   </div>
                   {d === "approved" && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-good" aria-label="assigned" />}
                   {!d && p?.caregiver && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-teal" aria-label="proposal ready" />}
@@ -127,7 +127,7 @@ export default function BoardPage() {
           </ul>
         </section>
 
-        <section aria-label="Proposed matches">
+        <section aria-label="Proposed matches" className="flex min-h-0 flex-col">
           {running && (
             <>
               {slow && (
@@ -155,13 +155,13 @@ export default function BoardPage() {
 
           {!running && proposals && (
             <>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted">
                   <span className="font-semibold text-ink">{approved}</span> of {proposals.length} approved
                 </p>
                 {pending.length > 1 && (
                   <button
-                    className="btn-ghost px-4 py-2"
+                    className="btn-ghost min-h-[34px] px-3 py-1.5"
                     onClick={() => {
                       setDecisions((x) => ({ ...x, ...Object.fromEntries(pending.map((p) => [p.scheduleId, "approved" as const])) }));
                       toast(`${pending.length} assignments approved`);
@@ -171,13 +171,13 @@ export default function BoardPage() {
                   </button>
                 )}
               </div>
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="fit-scroll -mx-1 grid content-start gap-4 px-1 pb-1 md:grid-cols-2 xl:grid-cols-3">
                 {proposals.map((p, i) => {
                   const d = decisions[p.scheduleId];
                   return (
                     <article
                       key={p.scheduleId}
-                      className={`glass group animate-rise p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift ${d === "rejected" ? "opacity-55" : ""} ${d === "approved" ? "ring-2 ring-good/50" : ""}`}
+                      className={`glass group animate-rise p-4 transition duration-300 hover:border-ink/20 ${d === "rejected" ? "opacity-55" : ""} ${d === "approved" ? "ring-2 ring-good/50" : ""}`}
                       style={{ animationDelay: `${i * 90}ms` }}
                     >
                       <div className="flex items-center justify-between">
@@ -187,53 +187,53 @@ export default function BoardPage() {
                       </div>
                       {p.caregiver && p.candidate ? (
                         <>
-                          <Link href={`/match/${p.client.id}/${p.caregiver.id}`} className="mt-4 flex items-center gap-2" aria-label={`Open match: ${p.client.name} and ${p.caregiver.name}`}>
-                            <div className="w-[76px] text-center">
-                              <Avatar name={p.client.name} size={46} ring="teal" />
-                              <p className="mt-1.5 truncate text-[14px] font-semibold">{p.client.name.split(" ")[0]}</p>
+                          <Link href={`/match/${p.client.id}/${p.caregiver.id}`} className="mt-3 flex items-center gap-2" aria-label={`Open match: ${p.client.name} and ${p.caregiver.name}`}>
+                            <div className="w-[68px] text-center">
+                              <Avatar name={p.client.name} size={40} ring="teal" />
+                              <p className="mt-1 truncate text-[13.5px] font-semibold">{p.client.name.split(" ")[0]}</p>
                               <p className="text-[12.5px] text-muted">{p.client.age}</p>
                             </div>
                             <div className="relative flex flex-1 items-center">
                               <div className="bridge-line h-[3px] w-full rounded-full opacity-70" />
-                              <span className="glass-strong absolute left-1/2 -translate-x-1/2 rounded-full p-0.5 shadow-lift">
-                                <ScoreRing value={p.candidate.taste} size={54} />
+                              <span className="absolute left-1/2 -translate-x-1/2 rounded-full bg-surface p-0.5">
+                                <ScoreRing value={p.candidate.taste} size={48} />
                               </span>
                             </div>
-                            <div className="w-[76px] text-center">
-                              <Avatar name={p.caregiver.name} size={46} ring="coral" />
-                              <p className="mt-1.5 truncate text-[14px] font-semibold">{p.caregiver.name.split(" ")[0]}</p>
+                            <div className="w-[68px] text-center">
+                              <Avatar name={p.caregiver.name} size={40} ring="coral" />
+                              <p className="mt-1 truncate text-[13.5px] font-semibold">{p.caregiver.name.split(" ")[0]}</p>
                               <p className="text-[12.5px] text-muted">{p.caregiver.age}</p>
                             </div>
                           </Link>
-                          <div className="mt-4 flex min-h-[28px] flex-wrap gap-1.5">
+                          <div className="mt-3 flex min-h-[24px] flex-wrap gap-1.5">
                             {p.candidate.bridges.slice(0, 2).map((b) => (
                               <BridgeChip key={b.entityId} name={b.name} domain={b.domain} weaker={b.weaker} />
                             ))}
                             {!p.candidate.bridges.length && <span className="text-xs text-muted">No strong shared taste yet</span>}
                           </div>
-                          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap text-xs text-muted">
+                          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap text-xs text-muted">
                             <span className="flex items-center gap-1">
                               <MapPin size={13} /> {p.candidate.travelMin} min
                             </span>
                             <span>{p.eligibleCount} qualified</span>
                             {p.candidate.continuity > 0 && <span>Worked together</span>}
                           </div>
-                          <div className="mt-4 flex items-center gap-2 border-t border-ink/[0.07] pt-4">
+                          <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
                             {!d ? (
                               <>
-                                <button className="btn-primary flex-1 py-2" onClick={() => decide(p, "approved")}>
+                                <button className="btn-primary min-h-[36px] flex-1 py-1.5" onClick={() => decide(p, "approved")}>
                                   <Check size={15} /> Approve
                                 </button>
-                                <button className="btn-ghost px-4" onClick={() => decide(p, "rejected")}>
-                                  <X size={15} /> Skip
+                                <button className="btn-icon btn-ghost h-9 min-h-[36px] w-9 shrink-0" onClick={() => decide(p, "rejected")} aria-label="Skip" title="Skip">
+                                  <X size={15} />
                                 </button>
                               </>
                             ) : (
-                              <button className="btn-ghost flex-1 py-2" onClick={() => setDecisions(({ [p.scheduleId]: _drop, ...rest }) => (void _drop, rest))}>
+                              <button className="btn-ghost min-h-[36px] flex-1 py-1.5" onClick={() => setDecisions(({ [p.scheduleId]: _drop, ...rest }) => (void _drop, rest))}>
                                 Undo
                               </button>
                             )}
-                            <Link href={`/match/${p.client.id}/${p.caregiver.id}`} className="btn-icon btn-ghost" aria-label="See match details" title="See match details">
+                            <Link href={`/match/${p.client.id}/${p.caregiver.id}`} className="btn-icon btn-ghost h-9 min-h-[36px] w-9 shrink-0" aria-label="See match details" title="See match details">
                               <ChevronRight size={17} />
                             </Link>
                           </div>

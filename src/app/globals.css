@@ -2,66 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Clean white UI with a royal-navy primary. Token names are historical:
+   "teal" is the primary (navy) and "coral" the accent (gold). Light is the default;
+   the sidebar toggle adds .dark to <html> (saved in localStorage). */
 :root {
-  /* Premium white, royal navy, champagne gold. Token names are historical:
-     "teal" is the primary (royal navy) and "coral" the accent (gold). */
-  --bg: 250 249 246;
+  --bg: 248 249 251;
   --surface: 255 255 255;
-  --ink: 12 18 34;
-  --muted: 92 100 117;
-  --line: 228 226 220;
-  --teal: 27 42 94;
-  --teal-soft: 236 239 248;
+  --ink: 15 23 42;
+  --muted: 88 98 116;
+  --line: 229 231 236;
+  --teal: 30 48 110;
+  --teal-soft: 238 241 250;
   --coral: 176 141 87;
-  --coral-soft: 247 241 230;
-  /* Text-safe gold (≥4.5:1 on light surfaces); --coral stays the fill. */
+  --coral-soft: 248 243 234;
+  /* Text-safe gold (>=4.5:1 on light surfaces); --coral stays the fill. */
   --coral-ink: 122 90 40;
   --violet: 71 85 150;
   --good: 22 101 64;
   --warn: 128 84 8;
-  --bad: 150 36 52;
-  --glass: 255 255 255;
-  --glass-a: 0.78;
-  --glass-strong-a: 0.92;
-  --spot-a: 0.6;
-  --glass-border: 12 18 34;
-  --glass-border-a: 0.07;
-  --blob-a: 0.1;
+  --bad: 160 36 52;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: 8 11 20;
-    --surface: 17 21 33;
-    --ink: 236 238 244;
-    --muted: 160 168 186;
-    --line: 40 46 62;
-    --teal: 176 190 242;
-    --teal-soft: 28 36 64;
-    --coral: 214 186 132;
-    --coral-soft: 50 42 28;
-    --coral-ink: 226 204 160;
-    --violet: 132 148 222;
-    --good: 120 204 156;
-    --warn: 232 190 108;
-    --bad: 242 148 160;
-    --glass: 255 255 255;
-    --glass-a: 0.045;
-    --glass-strong-a: 0.085;
-    --spot-a: 0.06;
-    --glass-border: 255 255 255;
-    --glass-border-a: 0.08;
-    --blob-a: 0.16;
-    color-scheme: dark;
-  }
+:root.dark {
+  --bg: 11 13 18;
+  --surface: 20 23 30;
+  --ink: 236 238 243;
+  --muted: 156 163 178;
+  --line: 42 46 56;
+  --teal: 168 184 240;
+  --teal-soft: 32 40 66;
+  --coral: 214 186 132;
+  --coral-soft: 48 40 27;
+  --coral-ink: 226 204 160;
+  --violet: 132 148 222;
+  --good: 120 204 156;
+  --warn: 232 190 108;
+  --bad: 242 148 160;
+  color-scheme: dark;
 }
 
-/* Only <html> paints the page colour, so the ambient blobs (z-index -1) show through <body>.
-   17px base: easier reading for older users; every rem-based size scales with it. */
+/* 15px base keeps a full screen of content on a laptop; every rem-based size scales with it. */
 html {
   background: rgb(var(--bg));
-  font-size: 106.25%;
+  font-size: 93.75%;
 }
 body {
   background: transparent;
@@ -71,17 +55,13 @@ body {
 
 body {
   @apply font-sans antialiased;
-  font-feature-settings: "cv11", "ss01";
   -webkit-tap-highlight-color: transparent;
 }
 
+h1,
 h2,
 h3 {
   @apply font-display font-semibold tracking-tight;
-}
-/* Page titles in an editorial serif: the "royal" voice of the product. */
-h1 {
-  @apply font-serif font-normal tracking-[-0.01em];
 }
 
 ::selection {
@@ -89,50 +69,46 @@ h1 {
 }
 
 @layer components {
-  /* Frosted glass, Apple/Telegram style. */
+  /* Panels: solid surface, hairline border, soft shadow. (Class names kept from the glass era.) */
   .glass {
-    background: rgb(var(--glass) / var(--glass-a));
-    border: 1px solid rgb(var(--glass-border) / var(--glass-border-a));
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    @apply rounded-3xl shadow-glass;
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--line));
+    @apply rounded-2xl shadow-card;
   }
   .glass-strong {
-    background: rgb(var(--glass) / var(--glass-strong-a));
-    border: 1px solid rgb(var(--glass-border) / var(--glass-border-a));
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    backdrop-filter: blur(30px) saturate(180%);
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--line));
   }
   .glass-inset {
-    background: rgb(var(--ink) / 0.04);
-    @apply rounded-2xl;
+    background: rgb(var(--ink) / 0.035);
+    @apply rounded-xl;
   }
   .card {
     @apply glass;
   }
   .btn {
-    @apply inline-flex min-h-[44px] select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-semibold transition duration-200 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-[40px] select-none items-center justify-center gap-2 rounded-xl px-4 py-2 text-[14px] font-semibold transition duration-200 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-gradient-to-b from-teal/90 to-teal text-white shadow-[0_1px_0_0_rgb(255_255_255/0.18)_inset,0_8px_20px_-10px_rgb(var(--teal)/0.8)] hover:brightness-110 dark:text-bg;
+    @apply btn bg-teal text-white shadow-sm hover:brightness-110 dark:text-bg;
   }
   .btn-ghost {
-    @apply btn glass-strong text-ink shadow-[0_1px_2px_rgb(12_18_34/0.06)] hover:bg-white dark:hover:bg-white/10;
+    @apply btn glass-strong text-ink shadow-sm hover:bg-ink/[0.04];
   }
   .btn-danger {
-    @apply btn bg-gradient-to-b from-bad to-bad/90 text-white shadow-[0_8px_20px_-10px_rgb(var(--bad)/0.7)] hover:brightness-110 dark:from-[#8f2a3c] dark:to-[#7a2233] dark:text-white;
+    @apply btn bg-bad text-white shadow-sm hover:brightness-110 dark:bg-[#8f2a3c] dark:text-white;
   }
   .btn-icon {
-    @apply btn h-11 w-11 p-0;
+    @apply btn h-10 w-10 p-0;
   }
   .chip {
-    @apply inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-coralsoft/90 px-3 py-1 text-[13.5px] font-medium text-coralink;
+    @apply inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-coralsoft px-2.5 py-0.5 text-[13px] font-medium text-coralink;
   }
   .chip-teal {
-    @apply inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-tealsoft/90 px-3 py-1 text-[13.5px] font-medium text-teal;
+    @apply inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-tealsoft px-2.5 py-0.5 text-[13px] font-medium text-teal;
   }
   .label {
-    @apply text-[12.5px] font-semibold uppercase tracking-[0.07em] text-muted;
+    @apply text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted;
   }
   .skeleton {
     @apply relative overflow-hidden rounded-xl bg-ink/[0.06];
@@ -140,7 +116,7 @@ h1 {
   .skeleton::after {
     content: "";
     @apply absolute inset-0 -translate-x-full animate-shimmer;
-    background: linear-gradient(90deg, transparent, rgb(var(--glass) / 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgb(var(--surface) / 0.6), transparent);
   }
   .gradient-text {
     @apply bg-clip-text text-transparent;
@@ -153,25 +129,28 @@ h1 {
   }
 }
 
-/* Ambient background blobs behind the glass. */
-.ambient {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.ambient span {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  opacity: var(--blob-a);
-  @apply animate-blob;
-}
-
 /* Grid children may shrink below their content width (prevents phone-width overflow). */
 .grid > * {
   min-width: 0;
+}
+
+/* Laptop screens: a page fills the viewport and only its long panels scroll.
+   Short windows fall back to normal page scrolling. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .fit-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .fit-fill {
+    flex: 1 1 0%;
+    min-height: 0;
+  }
+  .fit-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -199,16 +178,6 @@ h1 {
   to {
     transform: translate(var(--x), var(--y)) scale(1);
     opacity: 0;
-  }
-}
-
-/* Cursor spotlight on glass (set by <Spotlight/>; mouse and trackpad only). */
-@media (hover: hover) and (pointer: fine) {
-  .glass[data-lit] {
-    background-image: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgb(var(--glass) / var(--spot-a)), transparent 42%);
-  }
-  :root .glass[data-lit] {
-    border-color: rgb(var(--glass-border) / calc(var(--glass-border-a) + 0.15));
   }
 }
 

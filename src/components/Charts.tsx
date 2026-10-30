@@ -21,7 +21,7 @@ const SHORT: Record<string, string> = {
 export function OfferRateChart({ rows, floor }: { rows: { group: string; rate: number; opportunities: number }[]; floor: number }) {
   const data = rows.map((r) => ({ group: SHORT[r.group] ?? r.group, full: r.group, rate: Math.round(r.rate * 100), n: r.opportunities }));
   return (
-    <div className="mt-3 h-64 w-full" role="img" aria-label={`Offer rate by group: ${data.map((d) => `${d.full} ${d.rate}%`).join(", ")}`}>
+    <div className="mt-3 h-52 w-full" role="img" aria-label={`Offer rate by group: ${data.map((d) => `${d.full} ${d.rate}%`).join(", ")}`}>
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 10, right: 6, left: -22, bottom: 0 }}>
           <defs>
@@ -48,7 +48,7 @@ export function OfferRateChart({ rows, floor }: { rows: { group: string; rate: n
 
 export function RetentionChart({ data }: { data: { day: number; proximity: number; bonded: number }[] }) {
   return (
-    <div className="h-64 w-full" role="img" aria-label={`Simulated retention: ${data.map((d) => `day ${d.day} today ${d.proximity}% Bonded ${d.bonded}%`).join("; ")}`}>
+    <div className="h-52 w-full" role="img" aria-label={`Simulated retention: ${data.map((d) => `day ${d.day} today ${d.proximity}% Bonded ${d.bonded}%`).join("; ")}`}>
       <ResponsiveContainer>
         <AreaChart data={data} margin={{ top: 10, right: 12, left: -22, bottom: 0 }}>
           <defs>

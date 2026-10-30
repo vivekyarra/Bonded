@@ -85,9 +85,10 @@ export function Tour() {
 
   const last = idx === TOUR.length - 1;
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[92px] z-40 flex justify-center px-3 lg:bottom-5 lg:pl-[248px]">
+    // Floats above the page; the app frame reserves bottom space on laptops so it never covers content.
+    <div className="pointer-events-none fixed inset-x-0 bottom-[92px] z-40 flex justify-center px-3 lg:bottom-5 lg:pl-[244px]">
       <div role="region" aria-label="Guided tour" className="glass-strong pointer-events-auto flex w-full max-w-[640px] animate-sheet items-center gap-3 rounded-[22px] p-2 pl-3 shadow-lift">
-        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal to-violet font-display text-sm font-bold text-white sm:flex">
+        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-teal font-display text-sm font-bold text-white dark:text-bg sm:flex">
           {idx + 1}
         </span>
         <div className="min-w-0 flex-1">

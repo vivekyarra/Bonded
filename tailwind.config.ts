@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
-  darkMode: "media",
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -22,15 +22,17 @@ const config: Config = {
         bad: "rgb(var(--bad) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "'Segoe UI'", "Roboto", "sans-serif"],
-        display: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "sans-serif"],
+        sans: ["var(--font-sans)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "'Segoe UI'", "Roboto", "sans-serif"],
+        display: ["var(--font-sans)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "sans-serif"],
         serif: ["var(--font-serif)", "'Iowan Old Style'", "Georgia", "serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
-      borderRadius: { xl2: "1.25rem", "3xl": "1.75rem" },
+      borderRadius: { xl2: "1.25rem", "3xl": "1.25rem" },
+      screens: { fit: { raw: "(min-width: 1024px) and (min-height: 600px)" } },
       boxShadow: {
-        glass: "0 1px 0 0 rgb(255 255 255 / 0.6) inset, 0 1px 2px rgb(12 18 34 / 0.04), 0 14px 36px -16px rgb(12 18 34 / 0.16)",
-        lift: "0 24px 60px -24px rgb(12 18 34 / 0.35)",
+        card: "0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03)",
+        glass: "0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.03)",
+        lift: "0 12px 32px -12px rgb(15 23 42 / 0.22)",
       },
       keyframes: {
         rise: { from: { opacity: "0", transform: "translateY(10px) scale(0.98)" }, to: { opacity: "1", transform: "none" } },

@@ -10,7 +10,7 @@ export default function KitPage({ params }: { params: { clientId: string; caregi
   const kit = useJson<BridgeKit>("/api/bridgekit", post(params));
   return (
     <div>
-      <Link href={`/match/${params.clientId}/${params.caregiverId}`} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
+      <Link href={`/match/${params.clientId}/${params.caregiverId}`} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
         <ArrowLeft size={16} /> Match
       </Link>
       <PageHeader title="Bridge Kit" subtitle="What the caregiver sees before the first visit" />

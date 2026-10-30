@@ -1,5 +1,5 @@
 "use client";
-import { AlertTriangle, BookOpen, Clapperboard, Info as InfoIcon, MapPin, Music2, RotateCw, Tv } from "lucide-react";
+import { AlertTriangle, BatteryFull, BookOpen, Clapperboard, Info as InfoIcon, MapPin, Music2, RotateCw, SignalHigh, Tv, Wifi } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 
@@ -27,13 +27,13 @@ export function initials(name: string) {
 export function Avatar({ name, size = 40, ring }: { name: string; size?: number; ring?: "teal" | "coral" }) {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const [a, b] = PALETTE[h % PALETTE.length];
+  const [a] = PALETTE[h % PALETTE.length];
   const ringCls = ring === "coral" ? "ring-2 ring-coral/80" : ring === "teal" ? "ring-2 ring-teal/80" : "";
   return (
     <span
       aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white shadow-sm ring-offset-2 ring-offset-transparent ${ringCls}`}
-      style={{ width: size, height: size, background: `linear-gradient(140deg, ${a}, ${b})`, fontSize: size * 0.36 }}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white ring-offset-2 ring-offset-surface ${ringCls}`}
+      style={{ width: size, height: size, background: a, fontSize: size * 0.36 }}
     >
       {initials(name)}
     </span>
@@ -60,24 +60,17 @@ export function ScoreRing({ value, size = 56, label = "taste", stroke = 6 }: { v
   const r = (size - stroke - 2) / 2;
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(100, value));
-  const id = `g${size}${Math.round(v)}`;
-  const [from, to] = v >= 60 ? ["rgb(var(--teal))", "rgb(var(--violet))"] : v >= 35 ? ["rgb(var(--coral-ink))", "rgb(var(--coral))"] : ["rgb(var(--bad))", "rgb(var(--bad) / 0.7)"];
+  const tone = v >= 60 ? "rgb(var(--teal))" : v >= 35 ? "rgb(var(--coral))" : "rgb(var(--bad))";
   return (
     <div className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} role="img" aria-label={`${label} score ${Math.round(v)} out of 100`}>
       <svg width={size} height={size} className="-rotate-90">
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={from} />
-            <stop offset="1" stopColor={to} />
-          </linearGradient>
-        </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--ink) / 0.08)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={`url(#${id})`}
+          stroke={tone}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${(shown / 100) * c} ${c}`}
@@ -216,13 +209,13 @@ export function Info({ children, side = "bottom" }: { children: ReactNode; side?
 
 export function PageHeader({ title, subtitle, actions, info }: { title: string; subtitle?: ReactNode; actions?: ReactNode; info?: ReactNode }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+    <header className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="flex items-center gap-2 text-[28px] leading-tight sm:text-[34px]">
+        <h1 className="flex items-center gap-2 text-[24px] leading-tight sm:text-[26px]">
           {title}
           {info && <Info>{info}</Info>}
         </h1>
-        {subtitle && <p className="mt-1 text-[16px] text-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-0.5 text-[14.5px] text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
@@ -231,14 +224,14 @@ export function PageHeader({ title, subtitle, actions, info }: { title: string; 
 
 export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
   return (
-    <div role="tablist" aria-label={label} className="inline-flex rounded-full bg-ink/[0.06] p-1">
+    <div role="tablist" aria-label={label} className="inline-flex rounded-xl bg-ink/[0.05] p-1">
       {options.map((o) => (
         <button
           key={o.value}
           role="tab"
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${value === o.value ? "glass-strong text-ink shadow-sm" : "text-muted hover:text-ink"}`}
+          className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${value === o.value ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink"}`}
         >
           {o.label}
         </button>
@@ -249,9 +242,9 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
 
 export function SegmentedLinks({ items, active }: { items: { href: string; label: string }[]; active: string }) {
   return (
-    <nav aria-label="Section" className="inline-flex rounded-full bg-ink/[0.06] p-1">
+    <nav aria-label="Section" className="inline-flex rounded-xl bg-ink/[0.05] p-1">
       {items.map((i) => (
-        <Link key={i.href} href={i.href} aria-current={active === i.href ? "page" : undefined} className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${active === i.href ? "glass-strong text-ink shadow-sm" : "text-muted hover:text-ink"}`}>
+        <Link key={i.href} href={i.href} aria-current={active === i.href ? "page" : undefined} className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${active === i.href ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink"}`}>
           {i.label}
         </Link>
       ))}
@@ -262,21 +255,43 @@ export function SegmentedLinks({ items, active }: { items: { href: string; label
 export function Stat({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: ReactNode; tone?: "teal" | "coral" | "good" | "warn" | "bad" }) {
   const color = tone ? { teal: "text-teal", coral: "text-coralink", good: "text-good", warn: "text-warn", bad: "text-bad" }[tone] : "";
   return (
-    <div className="glass p-4 sm:p-5">
+    <div className="glass p-4">
       <p className="label">{label}</p>
-      <p className={`mt-1 font-display text-3xl font-bold tabular-nums ${color}`}>{value}</p>
+      <p className={`mt-1 font-display text-2xl font-bold tabular-nums ${color}`}>{value}</p>
       {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
     </div>
   );
 }
 
-/** iPhone-style frame for caregiver-facing screens. */
+/** iPhone 15 Pro-style device for caregiver-facing screens: titanium band, side buttons,
+ *  Dynamic Island, status bar and home indicator. The screen scrolls; on laptops the
+ *  device is sized to fit the window. */
 export function PhoneFrame({ children }: { children: ReactNode }) {
+  const btn = "absolute w-[3px] bg-[#55534f]";
   return (
-    <div className="relative mx-auto w-full max-w-[380px] rounded-[3rem] bg-gradient-to-b from-[#2b2e36] to-[#0f1117] p-[11px] shadow-lift ring-1 ring-black/5">
-      <div className="relative overflow-hidden rounded-[2.4rem] bg-bg">
-        <div className="pointer-events-none absolute left-1/2 top-2.5 z-10 h-[26px] w-[96px] -translate-x-1/2 rounded-full bg-black" />
-        <div className="no-scrollbar max-h-[740px] overflow-y-auto px-4 pb-8 pt-12">{children}</div>
+    <div className="relative mx-auto w-full max-w-[340px]">
+      <span className={`${btn} -left-[2px] top-[96px] h-7 rounded-l`} aria-hidden />
+      <span className={`${btn} -left-[2px] top-[146px] h-12 rounded-l`} aria-hidden />
+      <span className={`${btn} -left-[2px] top-[206px] h-12 rounded-l`} aria-hidden />
+      <span className={`${btn} -right-[2px] top-[160px] h-[72px] rounded-r`} aria-hidden />
+      <div className="rounded-[3.25rem] bg-[linear-gradient(145deg,#9a9893,#6b6a66_35%,#4a4946_70%,#77756f)] p-[3px] shadow-[0_30px_60px_-25px_rgb(15_23_42/0.45),0_0_0_1px_rgb(0_0_0/0.15)]">
+        <div className="rounded-[3.1rem] bg-[#0b0b0c] p-[9px]">
+          <div className="relative overflow-hidden rounded-[2.55rem] bg-bg">
+            <div className="pointer-events-none absolute left-1/2 top-[10px] z-20 h-[27px] w-[92px] -translate-x-1/2 rounded-full bg-black" aria-hidden />
+            <div className="relative z-10 flex h-[46px] items-center justify-between px-7 pt-1 text-[14px] font-semibold text-ink" aria-hidden>
+              <span className="tabular-nums">9:41</span>
+              <span className="flex items-center gap-1">
+                <SignalHigh size={15} strokeWidth={2.6} />
+                <Wifi size={15} strokeWidth={2.6} />
+                <BatteryFull size={20} strokeWidth={2} />
+              </span>
+            </div>
+            <div className="no-scrollbar max-h-[680px] overflow-y-auto px-4 pb-8 pt-1 fit:max-h-[calc(100dvh-380px)]">{children}</div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-6 items-end justify-center bg-gradient-to-t from-bg to-transparent pb-2" aria-hidden>
+              <span className="h-[5px] w-32 rounded-full bg-ink/80" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -125,8 +125,8 @@ export default function MatchDetail({ params }: { params: { clientId: string; ca
   }
 
   return (
-    <div className="space-y-5">
-      <Link href="/board" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
+    <div className="fit-page space-y-4">
+      <Link href="/board" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
         <ArrowLeft size={16} /> Matches
       </Link>
       {d.loading && <DetailSkeleton />}
@@ -142,11 +142,11 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
   const gFirst = caregiver.name.split(" ")[0];
   return (
     <>
-      <section className="glass animate-rise overflow-hidden p-5 sm:p-6">
+      <section className="glass animate-rise shrink-0 overflow-hidden p-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-6">
-          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-40">
-            <Avatar name={client.name} size={64} ring="teal" />
-            <h1 className="mt-2.5 max-w-full truncate text-xl sm:text-2xl">
+          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-44">
+            <Avatar name={client.name} size={48} ring="teal" />
+            <h1 className="mt-1.5 max-w-full truncate text-lg sm:text-xl">
               <span className="sm:hidden">{cFirst}</span>
               <span className="hidden sm:inline">{client.name}</span>
             </h1>
@@ -156,19 +156,19 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
           </div>
           <div className="relative flex flex-1 items-center justify-center">
             <div className="bridge-line absolute inset-x-0 h-[3px] rounded-full opacity-60" />
-            <span className="glass-strong relative scale-[0.78] rounded-full p-1 shadow-lift sm:scale-100">
-              <ScoreRing value={score.tasteScore} size={96} stroke={8} />
+            <span className="relative rounded-full bg-surface p-1">
+              <ScoreRing value={score.tasteScore} size={72} stroke={7} />
             </span>
           </div>
-          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-40">
-            <Avatar name={caregiver.name} size={64} ring="coral" />
-            <h2 className="mt-2.5 max-w-full truncate font-serif text-xl font-normal sm:text-2xl">{caregiver.name}</h2>
+          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-44">
+            <Avatar name={caregiver.name} size={48} ring="coral" />
+            <h2 className="mt-1.5 max-w-full truncate text-lg sm:text-xl">{caregiver.name}</h2>
             <p className="text-xs text-muted">
               {caregiver.age} · {caregiver.area}
             </p>
           </div>
         </div>
-        <div className="mt-5 grid gap-4 border-t border-ink/[0.07] pt-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 border-t border-line pt-3 sm:grid-cols-2">
           <div>
             <p className="label mb-2">{cFirst} loves</p>
             <Seeds seeds={client.seeds} unresolved={client.unresolved} />
@@ -180,7 +180,7 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="no-scrollbar -mx-1 overflow-x-auto px-1">
           <Segmented<Tab>
             label="Match detail"
@@ -209,9 +209,9 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
         </div>
       </div>
 
-      <div className={tab === "overview" ? "grid items-start gap-5 lg:grid-cols-[1.25fr_1fr]" : "space-y-5"}>
+      <div className={tab === "overview" ? "fit-fill grid gap-4 lg:grid-cols-[1.25fr_1fr]" : "space-y-5"}>
       {(tab === "bridges" || tab === "overview") && (
-        <section className="glass animate-rise p-2 sm:p-3" aria-label="Shared interests">
+        <section className="glass fit-scroll animate-rise p-2 sm:p-3" aria-label="Shared interests">
           <div className="flex items-center gap-2 px-3 pb-1 pt-2">
             <h3 className="text-lg">Shared interests</h3>
             <Info>Things Qloo finds both people love. Each bar shows how strongly each person leans toward it.</Info>
@@ -219,10 +219,10 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
           {!score.bridges.length && <p className="p-6 text-center text-sm text-muted">Qloo found no shared ground for this pair.</p>}
           <ul className="divide-y divide-ink/[0.06]">
             {score.bridges.map((b, i) => (
-              <li key={b.entityId} className="grid animate-rise grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-3 py-4 sm:grid-cols-[auto_1fr_220px]" style={{ animationDelay: `${i * 60}ms` }}>
-                <DomainIcon domain={b.domain} size={40} />
+              <li key={b.entityId} className="grid animate-rise grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-3 py-3 sm:grid-cols-[auto_1fr_200px]" style={{ animationDelay: `${i * 60}ms` }}>
+                <DomainIcon domain={b.domain} size={34} />
                 <div className="min-w-0">
-                  <p className="truncate text-[16px] font-semibold">{b.name}</p>
+                  <p className="truncate text-[14.5px] font-semibold">{b.name}</p>
                   <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                     {domainLabel(b.domain)}
                     {b.sharedSeed && <span className="font-semibold text-teal">· both named it</span>}
@@ -262,7 +262,7 @@ function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; 
         </section>
       )}
 
-        <div className="space-y-5">
+        <div className={`space-y-4 ${tab === "overview" ? "fit-scroll" : ""}`}>
       {(tab === "overlap" || tab === "overview") && (
         <section className="glass animate-rise p-5">
           <div className="flex items-center gap-2">

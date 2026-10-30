@@ -34,7 +34,7 @@ export default function FairnessPage() {
   const day90 = r?.curves.find((c) => c.day === 90);
 
   return (
-    <div className="space-y-6">
+    <div className="fit-page">
       <PageHeader title="Insights" subtitle="Fair offers and better matches" actions={<SegmentedLinks items={INSIGHT_TABS} active="/fairness" />} />
       {d.error && <ErrorState error={d.error} onRetry={d.reload} />}
       {d.loading && (
@@ -49,17 +49,17 @@ export default function FairnessPage() {
       )}
 
       {f && s && r && (
-        <>
-          <section className="glass animate-rise overflow-hidden">
-            <div className={`flex flex-wrap items-center gap-4 bg-gradient-to-r p-5 text-white dark:text-bg sm:p-6 ${s.cls}`}>
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 dark:bg-black/10">
-                <s.icon size={26} />
+        <div className="fit-fill grid gap-4 xl:grid-cols-[1.15fr_1fr]">
+          <section className="glass fit-scroll h-fit max-h-full animate-rise">
+            <div className={`flex flex-wrap items-center gap-3 bg-gradient-to-r px-5 py-3.5 text-white dark:text-bg ${s.cls}`}>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 dark:bg-black/10">
+                <s.icon size={21} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Shift-offer audit</p>
-                <p className="font-display text-2xl font-bold">{s.text}</p>
+                <p className="text-[11.5px] font-semibold uppercase tracking-wider opacity-85">Shift-offer audit</p>
+                <p className="font-display text-xl font-bold">{s.text}</p>
               </div>
-              <p className="max-w-sm text-sm opacity-90">
+              <p className="max-w-[260px] text-[13px] leading-snug opacity-90">
                 {f.status === "pass"
                   ? "Offer rates are balanced across self-reported groups."
                   : f.status === "watch"
@@ -67,7 +67,7 @@ export default function FairnessPage() {
                     : "A significant gap in offer rates. Review weights and rotation before the next cycle."}
               </p>
             </div>
-            <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="space-y-4 p-5">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-[17px]">Offer rate by group</h2>
@@ -75,23 +75,23 @@ export default function FairnessPage() {
                 </div>
                 <OfferRateChart rows={f.rows} floor={Math.round(Math.max(...f.rows.map((x) => x.rate), 0) * 80)} />
               </div>
-              <div className="grid grid-cols-2 content-start gap-3">
-                <div className="glass-inset p-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="glass-inset p-3">
                   <p className="label">p-value</p>
                   <p className="mt-1 font-display text-2xl font-bold tabular-nums">{f.chi.pPermutation}</p>
                   <p className="text-[12.5px] text-muted">permutation test</p>
                 </div>
-                <div className="glass-inset p-4">
+                <div className="glass-inset p-3">
                   <p className="label">4/5 ratio</p>
                   <p className={`mt-1 font-display text-2xl font-bold tabular-nums ${f.impactRatio >= 0.8 ? "text-good" : "text-warn"}`}>{f.impactRatio}</p>
                   <p className="text-[12.5px] text-muted">min ÷ max rate</p>
                 </div>
-                <div className="glass-inset p-4">
+                <div className="glass-inset p-3">
                   <p className="label">Offers</p>
                   <p className="mt-1 font-display text-2xl font-bold tabular-nums">{f.totalOffers}</p>
                   <p className="text-[12.5px] text-muted">simulated</p>
                 </div>
-                <div className="glass-inset p-4">
+                <div className="glass-inset p-3">
                   <p className="label">No offer</p>
                   <p className="mt-1 font-display text-2xl font-bold tabular-nums">
                     {f.caregiversWithoutOffers}
@@ -103,9 +103,9 @@ export default function FairnessPage() {
             </div>
           </section>
 
-          <section className="animate-rise space-y-4 [animation-delay:120ms]">
+          <section className="fit-scroll animate-rise space-y-4 [animation-delay:120ms]">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl">Before vs after Bonded</h2>
+              <h2 className="text-[17px]">Before vs after Bonded</h2>
               <span className="rounded-full bg-warn/15 px-2.5 py-0.5 text-[12.5px] font-bold uppercase tracking-wider text-warn">Simulated</span>
               <Info>
                 Today's {r.matches} regular matches were assigned by nearest available caregiver. Bonded re-solves the same schedules with the same constraints. {r.model}
@@ -116,11 +116,11 @@ export default function FairnessPage() {
               <Stat label="With Bonded" value={<CountUp to={r.avgTasteAfter} />} sub={`${r.avgTasteAfter - r.avgTasteBefore} points better`} tone="coral" />
               {day90 && <Stat label="Still together at 90 days" value={<CountUp to={day90.bonded} suffix="%" />} sub={`versus ${day90.proximity}% today`} tone="teal" />}
             </div>
-            <div className="glass p-5">
+            <div className="glass p-4">
               <RetentionChart data={r.curves} />
             </div>
           </section>
-        </>
+        </div>
       )}
     </div>
   );

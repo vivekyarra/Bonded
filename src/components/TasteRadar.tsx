@@ -7,7 +7,7 @@ export function TasteRadar({ data, clientLabel, caregiverLabel }: { data: { doma
   const top = Math.min(100, Math.ceil((peak * 1.15) / 10) * 10);
   return (
     <div>
-      <div className="h-72 w-full" role="img" aria-label={`Shared taste by domain: ${data.map((d) => `${d.domain} ${d.client}% / ${d.caregiver}%`).join(", ")}`}>
+      <div className="h-60 w-full" role="img" aria-label={`Shared taste by domain: ${data.map((d) => `${d.domain} ${d.client}% / ${d.caregiver}%`).join(", ")}`}>
         <ResponsiveContainer>
           <RadarChart data={data} outerRadius="72%">
             <PolarGrid stroke="rgb(var(--ink) / 0.1)" />

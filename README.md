@@ -38,12 +38,12 @@ Also: `/health` (early-warning flags) and `/evaluation` (gold set, Bonded vs LLM
 - **⌘K / Ctrl+K command menu** (or **/**): jump to any screen, action or story match.
 - **App-window layouts:** panels scroll independently, so primary actions such as *Approve & send* and *Mark reviewed* stay on screen at 1366×768.
 - **Match Detail overview:** bridges, the overlap radar and the "why" breakdown side by side.
-- **Glass that reacts:** a cursor spotlight on the glass panels (mouse and trackpad only).
+- **Fits the screen:** on a laptop every guided-tour page fits in one window. The sidebar, top bar and tour stay put, and only long lists scroll inside their own panel.
 
 The app is built like a product, not a slide:
 
-- **Premium, royal palette:** warm white, deep royal navy and champagne gold, with an editorial serif (Instrument Serif) for titles and Inter for the interface. Dark mode is royal midnight.
-- **Easy to read for every age:** a 17px base font, 44px tap targets, plain-language labels ("Find matches", "Cover a call-out", "Skip") and no tiny print. Motion is calm and purposeful: numbers count up, two "favourites" ribbons drift slowly (they pause on hover), and the "How it works" timeline draws itself as you scroll. All of it switches off under `prefers-reduced-motion`.
+- **Clean, white interface:** white surfaces, hairline borders, a royal-navy primary and a gold accent, set in IBM Plex Sans. Light by default, with a Light / Dark switch in the sidebar (saved per browser).
+- **Easy to read for every age:** a 15px base font, 40px buttons, plain-language labels ("Find matches", "Cover a call-out", "Skip") and no tiny print. Motion is calm and purposeful: numbers count up, two "favourites" ribbons drift slowly (they pause on hover), and the "How it works" timeline draws itself as you scroll. All of it switches off under `prefers-reduced-motion`.
 - **Glass interface:** frosted panels with hairline borders, in light and dark mode.
 - **Navigation:** a desktop sidebar, and a bottom tab bar on phones (Telegram/iOS style).
 - **Animation:** skeleton loaders and animated score rings.

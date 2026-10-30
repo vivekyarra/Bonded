@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
-import { Spotlight } from "@/components/Spotlight";
+import { IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const sans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
 
 export const metadata: Metadata = {
@@ -16,22 +15,19 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf9f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#080b14" },
-  ],
+  themeColor: "#ffffff",
 };
+
+/** Light by default; applies a saved "dark" choice before first paint so there is no flash. */
+const THEME_SCRIPT = `try{if(localStorage.getItem("bonded.theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${serif.variable}`}>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-screen">
-        <div className="ambient" aria-hidden>
-          <span style={{ width: 520, height: 520, left: "-8%", top: "-10%", background: "rgb(var(--teal))" }} />
-          <span style={{ width: 460, height: 460, right: "-6%", top: "10%", background: "rgb(var(--coral))", animationDelay: "-7s" }} />
-          <span style={{ width: 420, height: 420, left: "30%", bottom: "-15%", background: "rgb(var(--violet))", animationDelay: "-14s" }} />
-        </div>
-        <Spotlight />
         {children}
       </body>
     </html>
