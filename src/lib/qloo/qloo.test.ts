@@ -97,3 +97,27 @@ describe("QlooClient over the offline fixture", () => {
     expect(again.cached).toBe(true);
   });
 });
+
+describe("slimResponse", () => {
+  it("keeps every field Bonded parses and nothing else", async () => {
+    const { slimResponse } = await import("./parse");
+    const body = {
+      results: {
+        entities: [
+          {
+            entity_id: "X1",
+            name: "Coco",
+            types: ["urn:entity:movie"],
+            popularity: 0.912345,
+            properties: { image: { url: "c.png" }, release_year: 2017, short_description: "long text", keywords: ["a", "b"] },
+            tags: [{ id: "t" }],
+            query: { affinity: 0.81234, explainability: { signal: { interests: { entities: [{ entity_id: "S1", score: 0.4 }] } } } },
+          },
+        ],
+      },
+    };
+    const slim = slimResponse(body);
+    expect(parseEntities(slim, null)).toEqual(parseEntities(body, null).map((e) => ({ ...e, description: undefined, popularity: 0.9123, affinity: 0.8123 })));
+    expect(JSON.stringify(slim)).not.toContain("keywords");
+  });
+});

@@ -99,3 +99,39 @@ export function ensureAffinity(entities: QlooEntity[]): QlooEntity[] {
     e.affinity !== undefined ? e : { ...e, affinity: n <= 1 ? 1 : 1 - (0.7 * i) / (n - 1) },
   );
 }
+
+/**
+ * Canonical, minimal form of a Qloo response for the shipped cache bundle: only the
+ * fields Bonded reads, so the snapshot stays small. Parsing it yields the same entities.
+ */
+export function slimResponse(body: unknown): unknown {
+  const list = extractEntityList(body);
+  if (!list.length) return body;
+  return {
+    results: {
+      entities: list.map((raw) => {
+        const e = parseEntity(raw, null);
+        if (!e) return {};
+        return {
+          entity_id: e.id,
+          name: e.name,
+          ...(e.kind ? { types: [`urn:entity:${e.kind}`] } : {}),
+          ...(e.popularity !== undefined ? { popularity: Number(e.popularity.toFixed(4)) } : {}),
+          properties: {
+            ...(e.image ? { image: { url: e.image } } : {}),
+            ...(e.year ? { release_year: e.year } : {}),
+            ...(e.address ? { address: e.address } : {}),
+          },
+          ...(e.affinity !== undefined || e.explainedBy
+            ? {
+                query: {
+                  ...(e.affinity !== undefined ? { affinity: Number(e.affinity.toFixed(4)) } : {}),
+                  ...(e.explainedBy ? { explainability: { signal: { interests: { entities: e.explainedBy.map((id) => ({ entity_id: id })) } } } } : {}),
+                },
+              }
+            : {}),
+        };
+      }),
+    },
+  };
+}
