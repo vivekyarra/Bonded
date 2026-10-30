@@ -13,11 +13,25 @@ const norm = (s: string) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
-/** Prefer an exact (accent/case-insensitive) name match, else Qloo's top result. */
-export function pickSearchHit(input: string, hits: QlooEntity[]): QlooEntity | null {
-  if (!hits.length) return null;
+export const AGENCY_CENTER = { lat: 33.4484, lng: -112.074 };
+export const PLACE_RADIUS_KM = 80;
+
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const r = (x: number) => (x * Math.PI) / 180;
+  const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Prefer an exact (accent/case-insensitive) name match, else Qloo's top result.
+ * Places must be in the agency's metro: a "Durant's" in Riyadh is not the Phoenix steakhouse.
+ */
+export function pickSearchHit(input: string, hits: QlooEntity[], near?: { lat: number; lng: number }): QlooEntity | null {
+  let pool = hits;
+  if (near) pool = hits.filter((h) => h.lat !== undefined && h.lng !== undefined && distanceKm(near, { lat: h.lat, lng: h.lng }) <= PLACE_RADIUS_KM);
+  if (!pool.length) return null;
   const n = norm(input);
-  return hits.find((h) => norm(h.name) === n) ?? hits.find((h) => norm(h.name).startsWith(n)) ?? hits[0];
+  return pool.find((h) => norm(h.name) === n) ?? pool[0];
 }
 
 /** Step 1: resolve every favourite to a Qloo entity id. Unresolved seeds are reported, never guessed. */
@@ -30,9 +44,9 @@ export async function resolveSeeds(
   const results = await Promise.all(
     seeds.map(async (s) => {
       try {
-        const res = await qloo.search(s.name, s.kind, 5);
+        const res = await qloo.search(s.name, s.kind, s.kind === "place" ? 10 : 5);
         cached &&= res.cached;
-        const hit = pickSearchHit(s.name, res.data);
+        const hit = pickSearchHit(s.name, res.data, s.kind === "place" ? AGENCY_CENTER : undefined);
         return hit
           ? ({ qlooId: hit.id, name: hit.name, kind: s.kind, input: s.name, source: s.source ?? "intake" } as ResolvedSeed)
           : null;

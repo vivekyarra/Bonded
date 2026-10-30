@@ -1,9 +1,9 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { getAgency } from "../agency/sunrise";
 import { byId, caregiverName } from "../agency/query";
 import type { Candidate } from "../matcher/rank";
 import type { EntityKind } from "../qloo/types";
-import { baseParams, claude, textOf } from "./claude";
+import { env, hasLlm } from "../env";
+import { functionCalls, generate, type GeminiContent, textOf } from "./llm";
 import { AGENT_SYSTEM, CALLOUT_TASK } from "./prompts";
 import {
   CALLOUT_TOOLS,
@@ -18,7 +18,7 @@ import {
 } from "./tools";
 
 export type TraceEvent =
-  | { type: "start"; mode: "claude" | "deterministic"; model?: string; shiftId: string }
+  | { type: "start"; mode: "llm" | "deterministic"; model?: string; shiftId: string }
   | { type: "say"; text: string }
   | { type: "tool"; id: string; tool: string; input: Record<string, unknown> }
   | { type: "tool_result"; id: string; tool: string; summary: string; ms: number; error?: boolean }
@@ -38,7 +38,7 @@ export interface CalloutCandidate {
 }
 
 export interface CalloutResult {
-  mode: "claude" | "deterministic";
+  mode: "llm" | "deterministic";
   shiftId: string;
   clientId: string;
   candidates: CalloutCandidate[];
@@ -60,7 +60,7 @@ interface RunState {
 let seq = 0;
 const newId = () => `t${Date.now().toString(36)}${(seq++).toString(36)}`;
 
-/** Execute one tool by name. Shared by the Claude loop and the deterministic runner. */
+/** Execute one tool by name. Shared by the LLM loop and the deterministic runner. */
 async function execTool(name: string, input: Record<string, unknown>, st: RunState): Promise<ToolOutput> {
   const str = (k: string) => String(input[k] ?? "");
   switch (name) {
@@ -78,7 +78,7 @@ async function execTool(name: string, input: Record<string, unknown>, st: RunSta
     case "draft_offer": {
       const d = await draftOffer(str("caregiver_id"), str("shift_id"));
       st.drafts.set(d.draftId, d);
-      return { result: { draft_id: d.draftId, text: d.text, status: "draft" }, summary: `Draft for ${d.caregiverName}: “${d.text}”` };
+      return { result: { draft_id: d.draftId, text: d.text, status: "draft" }, summary: `Offer drafted for ${d.caregiverName}${d.bridges.length ? ` · ${d.bridges.join(", ")}` : ""}` };
     }
     case "send_offer": {
       const id = str("draft_id");
@@ -111,7 +111,7 @@ async function traced(name: string, input: Record<string, unknown>, st: RunState
   }
 }
 
-/** Same tools, fixed order, templated narration. Used when no Claude key is configured. */
+/** Same tools, fixed order, templated narration. Used when no Gemini key is configured. */
 async function runDeterministic(st: RunState, emit: Emit): Promise<string> {
   const sh = byId(getAgency()).shift(st.shiftId);
   emit({ type: "say", text: "Looking up the shift and the client's care needs." });
@@ -132,50 +132,36 @@ async function runDeterministic(st: RunState, emit: Emit): Promise<string> {
   return `Recommend ${caregiverName(g)} (score ${top[0].composite}, taste ${top[0].taste}/100${why.length ? `; shared: ${why.join(", ")}` : ""}). Offer is drafted and waiting for your approval.`;
 }
 
-async function runClaude(st: RunState, emit: Emit): Promise<string> {
-  const c = claude()!;
+/** Gemini function-calling loop over the same tools. */
+async function runLlm(st: RunState, emit: Emit): Promise<string> {
   const sh = byId(getAgency()).shift(st.shiftId);
   const regular = sh.caregiverId ? caregiverName(byId(getAgency()).caregiver(sh.caregiverId)) : "The regular caregiver";
-  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: CALLOUT_TASK(st.shiftId, regular) }];
+  const contents: GeminiContent[] = [{ role: "user", parts: [{ text: CALLOUT_TASK(st.shiftId, regular) }] }];
   let summary = "";
   for (let turn = 0; turn < 12; turn++) {
-    const res = await c.beta.messages.create({
-      ...baseParams(),
-      max_tokens: 4000,
-      system: AGENT_SYSTEM,
-      tools: CALLOUT_TOOLS,
-      messages,
-    });
+    const res = await generate({ system: AGENT_SYSTEM, contents, tools: CALLOUT_TOOLS });
     const said = textOf(res.content);
     if (said) {
       emit({ type: "say", text: said });
       summary = said;
     }
-    if (res.stop_reason === "refusal") {
-      emit({ type: "notice", text: "Claude declined this turn; finishing deterministically." });
+    const calls = functionCalls(res.content);
+    if (res.finishReason && !["STOP", "MAX_TOKENS"].includes(res.finishReason) && !calls.length) {
+      emit({ type: "notice", text: `Gemini stopped (${res.finishReason}); finishing deterministically.` });
       return runDeterministic(st, emit);
     }
-    if (res.stop_reason === "pause_turn") {
-      messages.push({ role: "assistant", content: res.content });
-      continue;
-    }
-    const uses = res.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
-    if (res.stop_reason !== "tool_use" || !uses.length) break;
-    messages.push({ role: "assistant", content: res.content });
-    const results = await Promise.all(
-      uses.map(async (u) => {
-        const out = await traced(u.name, (u.input ?? {}) as Record<string, unknown>, st, emit);
-        return {
-          type: "tool_result" as const,
-          tool_use_id: u.id,
-          content: JSON.stringify(out.result),
-          is_error: out.error ?? false,
-        };
+    if (!calls.length) break;
+    // Echo the model turn back verbatim: Gemini 3 needs its thought signatures returned.
+    contents.push(res.content);
+    const parts = await Promise.all(
+      calls.map(async ({ functionCall: fc }) => {
+        const out = await traced(fc.name, fc.args ?? {}, st, emit);
+        return { functionResponse: { name: fc.name, ...(fc.id ? { id: fc.id } : {}), response: { result: out.result } } };
       }),
     );
-    messages.push({ role: "user", content: results });
+    contents.push({ role: "user", parts });
   }
-  // Guarantee the deliverables even if Claude stopped early.
+  // Guarantee the deliverables even if the model stopped early.
   if (!st.candidates.length) await traced("rank_candidates", { shift_id: st.shiftId }, st, emit);
   for (const cand of st.candidates.slice(0, 3)) {
     const id = `${st.shiftId}:${cand.caregiverId}`;
@@ -190,14 +176,14 @@ export async function runCalloutAgent(shiftId: string, emit: Emit): Promise<Call
   const agency = getAgency();
   const sh = byId(agency).shift(shiftId);
   const st: RunState = { shiftId, candidates: [], drafts: new Map(), pendingApproval: null };
-  const useClaude = Boolean(claude());
-  emit({ type: "start", mode: useClaude ? "claude" : "deterministic", model: useClaude ? baseParams().model : undefined, shiftId });
-  let mode: CalloutResult["mode"] = useClaude ? "claude" : "deterministic";
+  const useLlm = hasLlm();
+  emit({ type: "start", mode: useLlm ? "llm" : "deterministic", model: useLlm ? env.geminiModel : undefined, shiftId });
+  let mode: CalloutResult["mode"] = useLlm ? "llm" : "deterministic";
   let summary: string;
   try {
-    summary = useClaude ? await runClaude(st, emit) : await runDeterministic(st, emit);
+    summary = useLlm ? await runLlm(st, emit) : await runDeterministic(st, emit);
   } catch (err) {
-    emit({ type: "notice", text: `Claude unavailable (${err instanceof Error ? err.message : "error"}); running deterministically.` });
+    emit({ type: "notice", text: `Gemini unavailable (${err instanceof Error ? err.message : "error"}); running deterministically.` });
     mode = "deterministic";
     st.candidates = [];
     st.drafts.clear();

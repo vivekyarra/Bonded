@@ -1,8 +1,11 @@
 "use client";
+import { ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import type { FairnessReport } from "@/lib/audit/fairness";
 import { OfferRateChart, RetentionChart } from "@/components/Charts";
-import { ErrorState, PageHeader, Spinner } from "@/components/ui";
+import { ErrorState, Info, PageHeader, SegmentedLinks, Skeleton, Stat } from "@/components/ui";
 import { useJson } from "@/components/useJson";
+import { INSIGHT_TABS } from "@/components/insights";
+import { CountUp } from "@/components/motion";
 
 interface Data {
   fairness: FairnessReport;
@@ -17,107 +20,108 @@ interface Data {
   };
 }
 
+const STATUS = {
+  pass: { icon: ShieldCheck, text: "Balanced", cls: "from-good to-teal" },
+  watch: { icon: ShieldQuestion, text: "Watch", cls: "from-warn to-coral" },
+  alert: { icon: ShieldAlert, text: "Alert", cls: "from-bad to-coral" },
+} as const;
+
 export default function FairnessPage() {
   const d = useJson<Data>("/api/audit/fairness");
-  if (d.loading) return <Spinner label="Ranking every schedule and auditing offer rates…" />;
-  if (d.error || !d.data) return <ErrorState error={d.error ?? "No data"} onRetry={d.reload} />;
-  const { fairness: f, results: r } = d.data;
-  const top = Math.max(...f.rows.map((x) => x.rate), 0);
-  const day90 = r.curves.find((c) => c.day === 90);
+  const f = d.data?.fairness;
+  const r = d.data?.results;
+  const s = f ? STATUS[f.status] : null;
+  const day90 = r?.curves.find((c) => c.day === 90);
 
   return (
-    <div className="space-y-8">
-      <PageHeader eyebrow="Owner view · legal shield" title="Fairness & Results">
-        Matching never sees protected traits. Caregivers may optionally self-report a demographic group; it is stored separately and joined only here, after
-        matching, to check that shift offers stay balanced.
-      </PageHeader>
-
-      <section className="card p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-2xl">Shift-offer fairness audit</h2>
-          <span className={`rounded-full px-3 py-1 text-sm font-bold ${f.pass ? "bg-good/15 text-good" : "bg-bad/15 text-bad"}`}>{f.pass ? "PASS" : "ALERT"}</span>
-        </div>
-        <div className="mt-4 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <OfferRateChart rows={f.rows} floor={Math.round(top * 80)} />
-          <dl className="grid grid-cols-2 content-start gap-4 text-sm">
-            <div>
-              <dt className="label">Permutation p-value</dt>
-              <dd className="text-2xl font-semibold tabular-nums">{f.chi.pPermutation}</dd>
-              <dd className="text-[11px] text-muted">naive chi-square p {f.chi.p}</dd>
-            </div>
-            <div>
-              <dt className="label">Impact ratio (4/5 rule)</dt>
-              <dd className="text-2xl font-semibold tabular-nums">{f.impactRatio}</dd>
-            </div>
-            <div>
-              <dt className="label">Offers simulated</dt>
-              <dd className="text-2xl font-semibold tabular-nums">{f.totalOffers}</dd>
-            </div>
-            <div>
-              <dt className="label">Eligible caregivers with no offer</dt>
-              <dd className="text-2xl font-semibold tabular-nums">
-                {f.caregiversWithoutOffers}/{f.eligibleCaregivers}
-              </dd>
-            </div>
-            <p className="col-span-2 text-xs text-muted">{f.method}</p>
-          </dl>
-        </div>
-        <table className="mt-4 w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs text-muted">
-              <th className="py-1 font-medium">Self-reported group</th>
-              <th className="font-medium">Caregivers</th>
-              <th className="font-medium">Eligible opportunities</th>
-              <th className="font-medium">Offers</th>
-              <th className="font-medium">Rate</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {f.rows.map((row) => (
-              <tr key={row.group}>
-                <td className="py-1.5">{row.group}</td>
-                <td className="tabular-nums">{row.caregivers}</td>
-                <td className="tabular-nums">{row.opportunities}</td>
-                <td className="tabular-nums">{row.offers}</td>
-                <td className="tabular-nums">{Math.round(row.rate * 100)}%</td>
-              </tr>
+    <div className="space-y-6">
+      <PageHeader title="Insights" subtitle="Fair offers and better matches" actions={<SegmentedLinks items={INSIGHT_TABS} active="/fairness" />} />
+      {d.error && <ErrorState error={d.error} onRetry={d.reload} />}
+      {d.loading && (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-24 rounded-3xl" />
             ))}
-          </tbody>
-        </table>
-        {!f.pass && <p className="mt-3 text-sm font-semibold text-bad">Offer rates differ across groups. Review the taste weights and offer rotation with a human before the next scheduling cycle.</p>}
-      </section>
+          </div>
+          <Skeleton className="h-80 rounded-3xl" />
+        </div>
+      )}
 
-      <section className="card p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-2xl">Results: before vs after Bonded</h2>
-          <span className="rounded-full bg-warn/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-warn">Simulated</span>
-        </div>
-        <p className="mt-2 text-sm text-muted">
-          The {r.matches} current regular matches were assigned the way agencies do it today: nearest eligible caregiver. Bonded re-solves the same schedules with
-          the same hard constraints and hours caps.
-        </p>
-        <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-          <dl className="grid grid-cols-2 content-start gap-4">
-            <div className="rounded-xl bg-bg p-4">
-              <dt className="label">Avg taste today</dt>
-              <dd className="text-3xl font-semibold tabular-nums">{r.avgTasteBefore}</dd>
-            </div>
-            <div className="rounded-xl bg-coralsoft p-4">
-              <dt className="label">Avg taste with Bonded</dt>
-              <dd className="text-3xl font-semibold tabular-nums text-coral">{r.avgTasteAfter}</dd>
-            </div>
-            {day90 && (
-              <div className="col-span-2 rounded-xl bg-bg p-4 text-sm">
-                Simulated 90-day match retention: <strong>{day90.proximity}%</strong> today vs <strong>{day90.bonded}%</strong> with Bonded.
+      {f && s && r && (
+        <>
+          <section className="glass animate-rise overflow-hidden">
+            <div className={`flex flex-wrap items-center gap-4 bg-gradient-to-r p-5 text-white dark:text-bg sm:p-6 ${s.cls}`}>
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 dark:bg-black/10">
+                <s.icon size={26} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Shift-offer audit</p>
+                <p className="font-display text-2xl font-bold">{s.text}</p>
               </div>
-            )}
-            <p className="col-span-2 text-xs text-muted">
-              {r.model} Real outcome data (30/60/90-day retention, call-outs filled, time to fill, cancellations) replaces this once an agency pilots Bonded.
-            </p>
-          </dl>
-          <RetentionChart data={r.curves} />
-        </div>
-      </section>
+              <p className="max-w-sm text-sm opacity-90">
+                {f.status === "pass"
+                  ? "Offer rates are balanced across self-reported groups."
+                  : f.status === "watch"
+                    ? "A gap below the four-fifths line, but not statistically significant. Keep monitoring."
+                    : "A significant gap in offer rates. Review weights and rotation before the next cycle."}
+              </p>
+            </div>
+            <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.4fr_1fr]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[17px]">Offer rate by group</h2>
+                  <Info>{f.method} Groups are optional self-reports, stored separately and never used in matching.</Info>
+                </div>
+                <OfferRateChart rows={f.rows} floor={Math.round(Math.max(...f.rows.map((x) => x.rate), 0) * 80)} />
+              </div>
+              <div className="grid grid-cols-2 content-start gap-3">
+                <div className="glass-inset p-4">
+                  <p className="label">p-value</p>
+                  <p className="mt-1 font-display text-2xl font-bold tabular-nums">{f.chi.pPermutation}</p>
+                  <p className="text-[12.5px] text-muted">permutation test</p>
+                </div>
+                <div className="glass-inset p-4">
+                  <p className="label">4/5 ratio</p>
+                  <p className={`mt-1 font-display text-2xl font-bold tabular-nums ${f.impactRatio >= 0.8 ? "text-good" : "text-warn"}`}>{f.impactRatio}</p>
+                  <p className="text-[12.5px] text-muted">min ÷ max rate</p>
+                </div>
+                <div className="glass-inset p-4">
+                  <p className="label">Offers</p>
+                  <p className="mt-1 font-display text-2xl font-bold tabular-nums">{f.totalOffers}</p>
+                  <p className="text-[12.5px] text-muted">simulated</p>
+                </div>
+                <div className="glass-inset p-4">
+                  <p className="label">No offer</p>
+                  <p className="mt-1 font-display text-2xl font-bold tabular-nums">
+                    {f.caregiversWithoutOffers}
+                    <span className="text-base text-muted">/{f.eligibleCaregivers}</span>
+                  </p>
+                  <p className="text-[12.5px] text-muted">eligible caregivers</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="animate-rise space-y-4 [animation-delay:120ms]">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl">Before vs after Bonded</h2>
+              <span className="rounded-full bg-warn/15 px-2.5 py-0.5 text-[12.5px] font-bold uppercase tracking-wider text-warn">Simulated</span>
+              <Info>
+                Today's {r.matches} regular matches were assigned by nearest available caregiver. Bonded re-solves the same schedules with the same constraints. {r.model}
+              </Info>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Stat label="Average match today" value={<CountUp to={r.avgTasteBefore} />} sub="nearest available caregiver" />
+              <Stat label="With Bonded" value={<CountUp to={r.avgTasteAfter} />} sub={`${r.avgTasteAfter - r.avgTasteBefore} points better`} tone="coral" />
+              {day90 && <Stat label="Still together at 90 days" value={<CountUp to={day90.bonded} suffix="%" />} sub={`versus ${day90.proximity}% today`} tone="teal" />}
+            </div>
+            <div className="glass p-5">
+              <RetentionChart data={r.curves} />
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

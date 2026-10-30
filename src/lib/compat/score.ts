@@ -5,11 +5,13 @@ import { topEntities } from "./profile";
 import { DOMAIN_LABEL } from "../qloo/types";
 
 /**
- * Calibration: weighted Jaccard over 50-entity profiles rarely exceeds ~0.5, so the raw sum
- * is mapped onto 0–100 with a saturating curve (raw 0.1 → 33, 0.2 → 55, 0.3 → 70, 0.5 → 86).
- * The mapping is monotonic, so ranking is identical to the raw formula in the spec.
+ * Calibration: on live Qloo data, weighted Jaccard over 50-entity profiles mostly falls
+ * between 0.02 and 0.3, so the raw sum is mapped onto 0–100 with a saturating curve
+ * (raw 0.05 → 33, 0.1 → 55, 0.2 → 80). K was set so the synthetic agency's median pair
+ * lands near 40. The mapping is monotonic, so ranking (and the gold-set separation
+ * metric) is identical to the raw formula in the spec.
  */
-export const CALIBRATION_K = 4;
+export const CALIBRATION_K = 8;
 export const calibrate = (raw: number) => 1 - Math.exp(-CALIBRATION_K * Math.max(0, raw));
 
 export const SEED_BONUS_EACH = 0.02;
@@ -41,21 +43,18 @@ export function seedBonus(a: TasteProfile, b: TasteProfile): number {
 
 const hasData = (p: TasteProfile, d: Domain) => Object.keys(p.domains[d]).length > 0;
 
-export function frictionNotes(a: TasteProfile, b: TasteProfile, perDomain: PairScore["perDomain"]): FrictionNote[] {
+export function frictionNotes(a: TasteProfile, b: TasteProfile, perDomain: PairScore["perDomain"], bridges: PairScore["bridges"] = []): FrictionNote[] {
   const notes: FrictionNote[] = [];
   for (const d of DOMAINS) {
-    const pd = perDomain[d];
     if (!hasData(a, d) || !hasData(b, d)) continue;
-    if (pd.overlap < 0.03) {
-      const ta = topEntities(a, d, 2).map((e) => e.name);
-      const tb = topEntities(b, d, 2).map((e) => e.name);
-      notes.push({
-        domain: d,
-        text: `Little shared ground in ${DOMAIN_LABEL[d].toLowerCase()}: client leans ${ta.join(" / ")}; caregiver leans ${tb.join(" / ")}.`,
-      });
-    }
+    // Only a real gap: almost no overlap and no bridge found in this domain.
+    if (perDomain[d].overlap >= 0.03 || bridges.some((x) => x.domain === d)) continue;
+    const ta = topEntities(a, d, 1)[0]?.name;
+    const tb = topEntities(b, d, 1)[0]?.name;
+    if (!ta || !tb) continue;
+    notes.push({ domain: d, text: `Little shared ${DOMAIN_LABEL[d].toLowerCase() === "tv" ? "TV" : DOMAIN_LABEL[d].toLowerCase()}: ${ta} vs ${tb}.` });
   }
-  return notes;
+  return notes.slice(0, 2);
 }
 
 /**
@@ -78,6 +77,7 @@ export function scorePair(a: TasteProfile, b: TasteProfile, weights: DomainWeigh
   }
   const bonus = wSum > 0 ? seedBonus(a, b) : 0;
   const tasteScore = Math.round(100 * Math.min(1, calibrate(raw + bonus)));
+  const bridges = findBridges(a, b);
   return {
     aId: a.personId,
     bId: b.personId,
@@ -85,7 +85,7 @@ export function scorePair(a: TasteProfile, b: TasteProfile, weights: DomainWeigh
     raw: Number(raw.toFixed(4)),
     seedBonus: bonus,
     perDomain,
-    bridges: findBridges(a, b),
-    friction: frictionNotes(a, b, perDomain),
+    bridges,
+    friction: frictionNotes(a, b, perDomain, bridges),
   };
 }

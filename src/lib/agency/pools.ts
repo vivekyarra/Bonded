@@ -31,7 +31,7 @@ export const CLIENT_ARCHETYPES: Record<string, Archetype> = {
   ranchera: {
     artist: ["Pedro Infante", "Vicente Fernández", "Lola Beltrán", "Javier Solís", "Luis Miguel"],
     movie: ["Nosotros los pobres"],
-    tv_show: ["El Chavo del Ocho", "María la del Barrio"],
+    tv_show: ["El Chavo", "María la del Barrio"],
     book: ["One Hundred Years of Solitude", "Like Water for Chocolate"],
     place: ["Carolina's Mexican Food", "Los Dos Molinos"],
   },
@@ -62,7 +62,7 @@ export const CLIENT_ARCHETYPES: Record<string, Archetype> = {
     artist: ["Glenn Miller", "Nat King Cole"],
   },
   cooking: {
-    tv_show: ["Julia Child's The French Chef", "The Great British Bake Off", "Antiques Roadshow"],
+    tv_show: ["The French Chef", "The Great British Baking Show", "Antiques Roadshow"],
     movie: ["Julie & Julia"],
     place: ["Pizzeria Bianco", "Matt's Big Breakfast", "Chompie's"],
     artist: ["Perry Como", "Andy Williams"],
@@ -71,8 +71,8 @@ export const CLIENT_ARCHETYPES: Record<string, Archetype> = {
 
 export const CAREGIVER_ARCHETYPES: Record<string, Archetype> = {
   latin: {
-    artist: ["Bad Bunny", "Selena", "Karol G", "Peso Pluma", "Christian Nodal", "Natalia Lafourcade"],
-    movie: ["Coco", "Encanto"],
+    artist: ["Bad Bunny", "Karol G", "Peso Pluma", "Christian Nodal", "Natalia Lafourcade"],
+    movie: ["Coco", "Encanto", "Selena"],
     tv_show: ["Jane the Virgin"],
     book: ["The House on Mango Street"],
     place: ["Barrio Café"],
@@ -82,7 +82,7 @@ export const CAREGIVER_ARCHETYPES: Record<string, Archetype> = {
     movie: ["Barbie", "Mamma Mia!", "A Star Is Born"],
     tv_show: ["Bridgerton", "Grey's Anatomy", "Ted Lasso"],
     book: ["The Seven Husbands of Evelyn Hugo"],
-    place: ["Postino WineCafé"],
+    place: ["Postino Central"],
   },
   rnb: {
     artist: ["Beyoncé", "SZA", "Leon Bridges", "Bruno Mars", "Frank Ocean", "Amy Winehouse"],
@@ -101,12 +101,12 @@ export const CAREGIVER_ARCHETYPES: Record<string, Archetype> = {
   crossoverjazz: {
     artist: ["Michael Bublé", "Norah Jones", "Gregory Porter", "Jon Batiste", "Tony Bennett"],
     movie: ["La La Land", "Elvis"],
-    tv_show: ["The Great British Bake Off", "Only Murders in the Building"],
+    tv_show: ["The Great British Baking Show", "Only Murders in the Building"],
     book: ["The Alchemist"],
     place: ["The Nash"],
   },
   foodie: {
-    tv_show: ["Chopped", "Diners, Drive-Ins and Dives", "The Great British Bake Off", "Queer Eye"],
+    tv_show: ["Chopped", "Diners, Drive-Ins and Dives", "The Great British Baking Show", "Queer Eye"],
     movie: ["Chef", "Julie & Julia"],
     place: ["Pizzeria Bianco", "Pho Thanh", "Matt's Big Breakfast"],
     artist: ["Bruno Mars", "Norah Jones"],

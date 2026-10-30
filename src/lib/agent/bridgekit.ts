@@ -4,7 +4,7 @@ import { AGENCY_LOCATION } from "../compat/profile";
 import type { Bridge, PairScore, TasteProfile } from "../compat/types";
 import { qloo } from "../qloo/client";
 import { DOMAINS, type Domain } from "../qloo/types";
-import { claudeJson } from "./claude";
+import { llmJson } from "./llm";
 import { stripMarks, validateGroundedText } from "./guards";
 import { KIT_SYSTEM } from "./prompts";
 
@@ -42,23 +42,23 @@ export interface BridgeKit {
   activity: KitActivity | null;
   alsoTry: KitActivity[];
   careNotes: string[];
-  phrasing: "claude" | "template";
+  phrasing: "llm" | "template";
   guardNotes: string[];
   createdAt: string;
 }
 
 const OPENER_TEMPLATES: Record<Domain, (n: string, who: string) => string> = {
-  music: (n, who) => `Ask ${who} about [[${n}]]: "Do you have a favourite song of theirs? I've been playing them a lot lately."`,
+  music: (n, who) => `Ask ${who} about [[${n}]]: "Do you have a favourite song of theirs? Could we put it on?"`,
   tv: (n, who) => `Mention [[${n}]] and ask ${who} who their favourite on the show is.`,
   film: (n, who) => `Ask ${who} if they've seen [[${n}]], and what they'd say about it to someone seeing it for the first time.`,
-  food: (n, who) => `Ask ${who} whether they know [[${n}]] and what they'd order there.`,
+  food: (n, who) => `Ask ${who} whether they've been to [[${n}]] and what they remember about it.`,
   books: (n, who) => `Ask ${who} what stayed with them from [[${n}]].`,
 };
 
 const ACTIVITY: Record<Domain, { kind: KitActivity["kind"]; text: (n: string) => string }> = {
   tv: { kind: "watch", text: (n) => `Put on an episode of ${n} together and compare favourite moments.` },
   film: { kind: "watch", text: (n) => `Watch ${n} together over an afternoon.` },
-  food: { kind: "visit", text: (n) => `Plan a short outing to ${n}, or recreate a favourite dish from there at home.` },
+  food: { kind: "visit", text: (n) => `Plan a short outing to ${n} together, if the care plan allows.` },
   music: { kind: "listen", text: (n) => `Play a ${n} record and ask which song brings back a memory.` },
   books: { kind: "read", text: (n) => `Read a chapter of ${n} aloud and talk about it.` },
 };
@@ -85,13 +85,13 @@ function knownNames(a: TasteProfile, b: TasteProfile): string[] {
 }
 
 /** LLM phrasing with closed-set validation: regenerate once, then fall back to templates. */
-async function phraseOpeners(bridges: Bridge[], who: string, known: string[]): Promise<{ openers: KitOpener[]; claude: boolean; notes: string[] }> {
+async function phraseOpeners(bridges: Bridge[], who: string, known: string[]): Promise<{ openers: KitOpener[]; llm: boolean; notes: string[] }> {
   const picks = bridges.slice(0, 3);
   const allowed = picks.map((b) => b.name);
   const notes: string[] = [];
   const input = JSON.stringify({ client: who, shared_interests: picks.map((b) => ({ id: b.entityId, name: b.name, domain: b.domain })) });
   for (let attempt = 0; attempt < 2; attempt++) {
-    const out = await claudeJson<{ openers: { id: string; text: string }[] }>(KIT_SYSTEM, `Write one opener per shared interest.\n${input}`, {
+    const out = await llmJson<{ openers: { id: string; text: string }[] }>(KIT_SYSTEM, `Write one opener per shared interest.\n${input}`, {
       type: "object",
       properties: {
         openers: {
@@ -120,9 +120,9 @@ async function phraseOpeners(bridges: Bridge[], who: string, known: string[]): P
       }
       openers.push({ bridgeId: b.entityId, bridgeName: b.name, domain: b.domain, text: o.text });
     }
-    if (ok) return { openers, claude: true, notes };
+    if (ok) return { openers, llm: true, notes };
   }
-  return { openers: templateOpeners(picks, who), claude: false, notes };
+  return { openers: templateOpeners(picks, who), llm: false, notes };
 }
 
 async function buildPlaylist(a: TasteProfile, b: TasteProfile, bridges: Bridge[]): Promise<KitTrack[]> {
@@ -183,7 +183,7 @@ export async function buildBridgeKit(
   const q = byId(getAgency());
   const client = q.client(clientId);
   const cg = q.caregiver(caregiverId);
-  const { openers, claude: usedClaude, notes } = await phraseOpeners(pair.bridges, client.firstName, knownNames(profiles.client, profiles.caregiver));
+  const { openers, llm: usedLlm, notes } = await phraseOpeners(pair.bridges, client.firstName, knownNames(profiles.client, profiles.caregiver));
   const [playlist, activities] = await Promise.all([
     buildPlaylist(profiles.client, profiles.caregiver, pair.bridges),
     pickActivities(profiles.client, profiles.caregiver, pair.bridges),
@@ -199,7 +199,7 @@ export async function buildBridgeKit(
     activity: activities[0] ?? null,
     alsoTry: activities.slice(1, 3),
     careNotes: client.careNotes,
-    phrasing: usedClaude ? "claude" : "template",
+    phrasing: usedLlm ? "llm" : "template",
     guardNotes: notes,
     createdAt: new Date().toISOString(),
   };

@@ -111,7 +111,7 @@ describe("engine over the offline fixture graph", () => {
       personId: "maria",
       seeds: [
         { name: "Bad Bunny", kind: "artist" },
-        { name: "Selena", kind: "artist" },
+        { name: "Selena", kind: "movie" },
         { name: "Chopped", kind: "tv_show" },
         { name: "Coco", kind: "movie" },
       ],
@@ -148,5 +148,16 @@ describe("Qloo outage", () => {
     await expect(
       buildProfile(down, { personType: "guest", personId: "x", seeds: [{ name: "Selena outage probe", kind: "artist" }] }),
     ).rejects.toThrow("Qloo down");
+  });
+});
+
+describe("place resolution", () => {
+  it("only accepts places in the agency's metro", () => {
+    const hits = [
+      { id: "riyadh", name: "Durant's", kind: "place" as const, lat: 24.7, lng: 46.8 },
+      { id: "phx", name: "Durant's", kind: "place" as const, lat: 33.477, lng: -112.073 },
+    ];
+    expect(pickSearchHit("Durant's", hits, { lat: 33.4484, lng: -112.074 })?.id).toBe("phx");
+    expect(pickSearchHit("Durant's", hits.slice(0, 1), { lat: 33.4484, lng: -112.074 })).toBeNull();
   });
 });

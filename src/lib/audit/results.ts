@@ -16,7 +16,8 @@ export async function simulatedResults(scoreFn: ScoreFn, agency: Agency = getAge
   const assigned = agency.schedules.filter((s) => s.caregiverId);
   const before = await Promise.all(assigned.map(async (s) => (await scoreFn(s.clientId, s.caregiverId!)).tasteScore));
 
-  const freed: Agency = { ...agency, schedules: agency.schedules.map((s) => ({ ...s, caregiverId: undefined })) };
+  // Re-solve as if onboarding with Bonded from day one: no existing assignments, no continuity credit.
+  const freed: Agency = { ...agency, history: [], schedules: agency.schedules.map((s) => ({ ...s, caregiverId: undefined })) };
   const ranked = await Promise.all(assigned.map(async (s) => ({ s, r: await rankForSchedule(freed, s.id, scoreFn) })));
   ranked.sort((a, b) => a.r.candidates.length - b.r.candidates.length);
   const hours = new Map<string, number>();

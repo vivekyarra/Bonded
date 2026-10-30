@@ -12,7 +12,7 @@ export const maxDuration = 60;
  */
 export async function POST(req: Request) {
   const { draftId, approved_by_human } = await body<{ draftId: string; approved_by_human: boolean }>(req);
-  if (!draftId) return json({ error: "draftId required" }, 400);
+  if (typeof draftId !== "string" || !/^[a-z0-9-]{1,40}:[a-z0-9-]{1,40}$/i.test(draftId)) return json({ error: "draftId required" }, 400);
   try {
     const sent = await sendOffer(draftId, approved_by_human);
     const { shiftId, caregiverId } = sent.draft;

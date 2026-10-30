@@ -62,6 +62,7 @@ export function parseEntity(raw: Json, fallbackKind: EntityKind | null): QlooEnt
   const query = isObj(raw.query) ? raw.query : undefined;
   const image = isObj(props.image) ? str(props.image.url) : str(props.image);
   const affinity = num(query?.affinity) ?? num(raw.affinity) ?? num(raw.score);
+  const loc = isObj(raw.location) ? raw.location : isObj(props.geocode) ? props.geocode : undefined;
   return {
     id,
     name,
@@ -72,6 +73,8 @@ export function parseEntity(raw: Json, fallbackKind: EntityKind | null): QlooEnt
     description: str(props.short_description) ?? str(props.description),
     year: str(props.release_year) ?? (num(props.release_year) !== undefined ? String(props.release_year) : undefined) ?? str(props.publication_year),
     address: str(props.address),
+    lat: num(loc?.lat) ?? num(loc?.latitude),
+    lng: num(loc?.lon) ?? num(loc?.lng) ?? num(loc?.longitude),
     explainedBy: explainedBy(query),
   };
 }
@@ -122,6 +125,7 @@ export function slimResponse(body: unknown): unknown {
             ...(e.year ? { release_year: e.year } : {}),
             ...(e.address ? { address: e.address } : {}),
           },
+          ...(e.lat !== undefined && e.lng !== undefined ? { location: { lat: e.lat, lon: e.lng } } : {}),
           ...(e.affinity !== undefined || e.explainedBy
             ? {
                 query: {

@@ -3,13 +3,13 @@ import { clientName } from "../agency/query";
 import { guestKit } from "../agent/bridgekit";
 import { scorePair } from "../compat/score";
 import type { SeedInput } from "../compat/types";
-import { ENTITY_TYPES } from "../qloo/types";
+import { isEntityKind } from "./guard";
 import { guestProfile, personProfile } from "./engine";
 
 /** "Try it yourself": a judge's favourites vs all 60 clients. Nothing is stored. */
 export async function tryIt(favourites: SeedInput[]) {
   const seeds = favourites
-    .filter((f) => f && typeof f.name === "string" && f.name.trim() && f.kind in ENTITY_TYPES)
+    .filter((f) => f && typeof f === "object" && typeof f.name === "string" && f.name.trim() && isEntityKind(f.kind))
     .slice(0, 8)
     .map((f) => ({ name: f.name.trim().slice(0, 80), kind: f.kind, source: "intake" as const }));
   if (seeds.length < 3) throw new Error("Name at least 3 favourites.");

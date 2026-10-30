@@ -14,7 +14,21 @@ import {
   type QlooTransport,
 } from "./types";
 
+// Qloo starts returning 429 above ~6 concurrent requests per key.
 const limit = createLimiter(6);
+/** Identical requests already on the wire share one promise (no thundering herd on a cold cache). */
+const inflight = new Map<string, Promise<unknown>>();
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Backoff for 429/5xx: honour Retry-After, else exponential with jitter, capped at 8 s. */
+export function backoffMs(attempt: number, retryAfter: string | null): number {
+  const secs = retryAfter ? Number(retryAfter) : NaN;
+  if (Number.isFinite(secs) && secs >= 0) return Math.min(10_000, secs * 1000);
+  return Math.min(8_000, 600 * 2 ** attempt) + Math.floor(Math.random() * 250);
+}
+
+const MAX_ATTEMPTS = 5;
 
 /** Live HTTP transport. The API key is only ever read server-side. */
 export const httpTransport: QlooTransport = async (path, params) => {
@@ -22,9 +36,10 @@ export const httpTransport: QlooTransport = async (path, params) => {
   const url = new URL(env.qlooBaseUrl + path);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   let lastErr: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12_000);
+    let wait = 0;
     try {
       const res = await fetch(url, {
         headers: { "X-Api-Key": env.qlooApiKey, accept: "application/json" },
@@ -33,22 +48,26 @@ export const httpTransport: QlooTransport = async (path, params) => {
       });
       if (res.status === 429 || res.status >= 500) {
         lastErr = new QlooError(`Qloo ${res.status} on ${path}`, res.status);
-        await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
-        continue;
-      }
-      if (!res.ok) {
+        wait = backoffMs(attempt, res.headers.get("retry-after"));
+      } else if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new QlooError(`Qloo ${res.status} on ${path}: ${text.slice(0, 200)}`, res.status);
+      } else {
+        return (await res.json()) as unknown;
       }
-      return (await res.json()) as unknown;
     } catch (err) {
       if (err instanceof QlooError && err.status && err.status < 500 && err.status !== 429) throw err;
       lastErr = err;
+      wait = backoffMs(attempt, null);
     } finally {
       clearTimeout(timer);
     }
+    if (attempt < MAX_ATTEMPTS - 1) await sleep(wait);
   }
-  throw lastErr instanceof Error ? lastErr : new QlooError(`Qloo request failed: ${path}`);
+  // Network failures and timeouts surface as a QlooError so the API answers 502, not 500.
+  if (lastErr instanceof QlooError) throw lastErr;
+  const reason = lastErr instanceof Error ? (lastErr.name === "AbortError" ? "timed out" : lastErr.message) : "request failed";
+  throw new QlooError(`Qloo unreachable (${reason})`, 503);
 };
 
 export class QlooClient {
@@ -64,8 +83,17 @@ export class QlooClient {
     const memoryOnly = this.label === "fixture";
     const hit = cacheGet(key, memoryOnly);
     if (hit) return { data: hit.entry.response, cached: true, source: hit.tier };
-    const response = await limit(() => this.transport(path, params));
-    cacheSet(key, { endpoint: path, params, response, fetchedAt: new Date().toISOString() }, memoryOnly);
+    let pending = inflight.get(key);
+    if (!pending) {
+      pending = limit(() => this.transport(path, params))
+        .then((response) => {
+          cacheSet(key, { endpoint: path, params, response, fetchedAt: new Date().toISOString() }, memoryOnly);
+          return response;
+        })
+        .finally(() => inflight.delete(key));
+      inflight.set(key, pending);
+    }
+    const response = await pending;
     return { data: response, cached: false, source: this.label };
   }
 

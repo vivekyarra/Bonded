@@ -1,7 +1,10 @@
 /**
  * Pre-computes everything the judge path touches and writes data/qloo-cache.json, which
- * ships with the deploy so the demo is instant and survives a Qloo hiccup.
+ * ships inside the deployment (server-side only) so the demo is instant and survives a
+ * Qloo hiccup. The file is git-ignored: Qloo's hackathon terms forbid publishing response
+ * data in a public repository, so it is built at deploy time (`vercel-build`) instead.
  *   QLOO_API_KEY=... npm run warm-cache
+ *   --optional: skip quietly without a key and never fail the build on a Qloo error
  * Covers: all 100 synthetic profiles (so all 2,400 pair scores are pure compute), the
  * auto-match, call-out, Bridge Kits, health review, fairness audit, Try-it sample, and
  * the gold set.
@@ -27,21 +30,39 @@ import { tryIt } from "../src/lib/service/tryit";
 const step = async (label: string, fn: () => Promise<unknown>) => {
   const t = Date.now();
   process.stdout.write(`• ${label}… `);
-  await fn();
-  console.log(`${((Date.now() - t) / 1000).toFixed(1)} s`);
+  try {
+    await fn();
+    console.log(`${((Date.now() - t) / 1000).toFixed(1)} s`);
+  } catch (err) {
+    // Later steps still run; whatever was fetched so far is kept in the bundle.
+    console.log(`skipped (${err instanceof Error ? err.message : err})`);
+  }
 };
 
+const optional = process.argv.includes("--optional");
+
 async function main() {
+  if (optional && !isFixtureMode() && !env.qlooApiKey) {
+    console.log("warm-cache: QLOO_API_KEY not set, skipping (the app will call Qloo live).");
+    return;
+  }
   // DRY_RUN=1 with QLOO_MODE=fixture exercises every step offline without writing the bundle.
   const dry = process.env.DRY_RUN === "1";
   if (isFixtureMode() && !dry) throw new Error("warm-cache only makes sense against the live Qloo API (unset QLOO_MODE=fixture).");
   if (!isFixtureMode() && !env.qlooApiKey) throw new Error("Set QLOO_API_KEY.");
   const agency = getAgency();
   const unresolved: string[] = [];
+  const failed: string[] = [];
 
   await step("100 taste profiles", async () => {
-    for (const c of agency.clients) unresolved.push(...(await personProfile("client", c.id)).unresolved.map((u) => `${c.id}:${u}`));
-    for (const g of agency.caregivers) unresolved.push(...(await personProfile("caregiver", g.id)).unresolved.map((u) => `${g.id}:${u}`));
+    // The Qloo client caps concurrency, so building everyone at once is safe.
+    const people = [...agency.clients.map((c) => ["client", c.id] as const), ...agency.caregivers.map((g) => ["caregiver", g.id] as const)];
+    // One person failing (e.g. a rate-limit burst) must not sink the whole warm-up.
+    const settled = await Promise.allSettled(people.map(([t, id]) => personProfile(t, id)));
+    settled.forEach((r, i) => {
+      if (r.status === "fulfilled") unresolved.push(...r.value.unresolved.map((u) => `${r.value.personId}:${u}`));
+      else failed.push(`${people[i][1]} (${r.reason instanceof Error ? r.reason.message : r.reason})`);
+    });
   });
   await step("2,400 pair scores", async () => {
     for (const c of agency.clients) for (const g of agency.caregivers) await quickPairScore(c.id, g.id);
@@ -77,12 +98,14 @@ async function main() {
       { name: "Casablanca", kind: "movie" },
     ]),
   );
-  await step("gold set profiles", async () => {
-    for (const p of GOLD_SET) {
-      await buildProfile(qloo(), { personType: "client", personId: `${p.id}a`, seeds: p.a });
-      await buildProfile(qloo(), { personType: "caregiver", personId: `${p.id}b`, seeds: p.b });
-    }
-  });
+  await step("gold set profiles", () =>
+    Promise.all(
+      GOLD_SET.flatMap((p) => [
+        buildProfile(qloo(), { personType: "client", personId: `${p.id}a`, seeds: p.a }),
+        buildProfile(qloo(), { personType: "caregiver", personId: `${p.id}b`, seeds: p.b }),
+      ]),
+    ),
+  );
 
   if (dry) {
     console.log("\nDry run complete; bundle not written.");
@@ -93,10 +116,15 @@ async function main() {
   fs.writeFileSync(BUNDLE_PATH, JSON.stringify(slim));
   const mb = (fs.statSync(BUNDLE_PATH).size / 1e6).toFixed(1);
   console.log(`\nWrote ${Object.keys(slim).length} Qloo responses to ${BUNDLE_PATH} (${mb} MB).`);
+  if (failed.length) console.log(`Profiles not cached (will be fetched live): ${failed.join("; ")}`);
   if (unresolved.length) console.log(`Favourites Qloo could not resolve (dropped, never guessed): ${unresolved.join("; ")}`);
 }
 
 main().catch((err) => {
   console.error(err);
+  if (optional) {
+    console.warn("warm-cache failed; continuing the build without a bundled cache.");
+    return;
+  }
   process.exit(1);
 });

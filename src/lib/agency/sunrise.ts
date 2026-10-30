@@ -65,7 +65,7 @@ const STORY_CAREGIVERS: Omit<Caregiver, "phoneMock">[] = [
     skills: ["medication_reminders", "meal_prep", "companionship", "diabetic_care"],
     languages: ["English", "Spanish"], maxHours: 40, petsOk: true, smokeOk: false,
     availability: everyDay(["morning", "afternoon"]), consentTaste: true,
-    seeds: [s("Luis Miguel", "artist"), s("Selena", "artist"), s("Jane the Virgin", "tv_show"), s("Coco", "movie")],
+    seeds: [s("Luis Miguel", "artist"), s("Selena", "movie"), s("Jane the Virgin", "tv_show"), s("Coco", "movie")],
     blurb: "Dolores's regular caregiver for two years.",
   },
   {
@@ -74,7 +74,7 @@ const STORY_CAREGIVERS: Omit<Caregiver, "phoneMock">[] = [
     skills: ["medication_reminders", "meal_prep", "companionship"],
     languages: ["English", "Spanish"], maxHours: 32, petsOk: true, smokeOk: false,
     availability: everyDay(["morning", "afternoon"]), consentTaste: true,
-    seeds: [s("Bad Bunny", "artist"), s("Selena", "artist"), s("Christian Nodal", "artist"), s("Chopped", "tv_show"), s("Coco", "movie")],
+    seeds: [s("Bad Bunny", "artist"), s("Selena", "movie"), s("Christian Nodal", "artist"), s("Chopped", "tv_show"), s("Coco", "movie")],
     blurb: "Culinary-school dropout, cooks for her grandmother every Sunday.",
   },
   {
@@ -93,7 +93,7 @@ const STORY_CAREGIVERS: Omit<Caregiver, "phoneMock">[] = [
     skills: ["dementia_care", "medication_reminders", "companionship", "meal_prep"],
     languages: ["English"], maxHours: 36, petsOk: true, smokeOk: false,
     availability: everyDay(["morning", "afternoon"]), consentTaste: true,
-    seeds: [s("Norah Jones", "artist"), s("Gregory Porter", "artist"), s("Jon Batiste", "artist"), s("La La Land", "movie"), s("The Great British Bake Off", "tv_show")],
+    seeds: [s("Norah Jones", "artist"), s("Gregory Porter", "artist"), s("Jon Batiste", "artist"), s("La La Land", "movie"), s("The Great British Baking Show", "tv_show")],
     blurb: "Sings in a community choir; dementia-care certified.",
   },
   {

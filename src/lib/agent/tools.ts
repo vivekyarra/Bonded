@@ -1,4 +1,3 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { getAgency } from "../agency/sunrise";
 import { byId, caregiverName, clientShort, shiftLabel } from "../agency/query";
 import { SKILL_LABEL } from "../agency/types";
@@ -7,6 +6,7 @@ import { qloo } from "../qloo/client";
 import { ENTITY_TYPES, type EntityKind } from "../qloo/types";
 import { pairScore, personProfile, quickPairScore } from "../service/engine";
 import { buildBridgeKit } from "./bridgekit";
+import type { GeminiFunctionDeclaration } from "./llm";
 import { requireHumanApproval } from "./guards";
 
 export interface OfferDraft {
@@ -20,7 +20,7 @@ export interface OfferDraft {
 }
 
 export interface ToolOutput {
-  /** JSON returned to Claude. */
+  /** JSON returned to the LLM. */
   result: unknown;
   /** One line for the visible trace. */
   summary: string;
@@ -118,9 +118,15 @@ export async function draftOffer(caregiverId: string, shiftId: string): Promise<
   const c = q().client(sh.clientId);
   const cg = q().caregiver(caregiverId);
   const p = await pairScore(c.id, cg.id);
-  const names = p.bridges.filter((b) => !b.weaker).slice(0, 2).map((b) => b.name);
+  const top = p.bridges.filter((b) => !b.weaker).slice(0, 2);
+  const names = top.map((b) => b.name);
   const time = { morning: "9am–1pm", afternoon: "1–5pm", evening: "5–9pm" }[sh.block];
-  const hook = names.length ? ` You both love ${names.join(" and ")}.` : "";
+  // "Love" only when both people named it; otherwise it is Qloo's inference, so say so softly.
+  const hook = !top.length
+    ? ""
+    : top.every((b) => b.sharedSeed)
+      ? ` You both love ${names.join(" and ")}.`
+      : ` You'd both enjoy ${names.join(" and ")}.`;
   return {
     draftId: `${shiftId}:${caregiverId}`,
     shiftId,
@@ -146,7 +152,7 @@ export async function familyNotice(clientId: string, caregiverId: string, shiftI
   const sh = q().shift(shiftId);
   const p = await pairScore(clientId, caregiverId);
   const b = p.bridges.find((x) => !x.weaker);
-  const extra = b ? ` ${cg.firstName} is a big ${b.name} fan too.` : "";
+  const extra = b ? ` They share a taste for ${b.name}, so there will be plenty to talk about.` : "";
   return {
     to: `${c.family.name} (${c.family.relation})`,
     text: `Hi ${c.family.name}, ${cg.firstName} is covering for ${c.firstName} ${relativeDay(sh.date)} while the regular caregiver is out.${extra} – Sunrise Home Care`,
@@ -168,7 +174,7 @@ export async function bridgeKitFor(clientId: string, caregiverId: string) {
   return buildBridgeKit(clientId, caregiverId, pair, { client, caregiver });
 }
 
-// ------------------------------------------------------------------ Claude tool schemas
+// ------------------------------------------------------------------ LLM tool schemas
 
 const obj = (properties: Record<string, unknown>, required: string[]) => ({
   type: "object" as const,
@@ -177,47 +183,42 @@ const obj = (properties: Record<string, unknown>, required: string[]) => ({
   additionalProperties: false,
 });
 
-export const CALLOUT_TOOLS: Anthropic.Beta.BetaTool[] = [
-  { name: "get_shift", description: "Get a shift's client, time, required skills and regular caregiver.", input_schema: obj({ shift_id: { type: "string" } }, ["shift_id"]), strict: true },
+export const CALLOUT_TOOLS: GeminiFunctionDeclaration[] = [
+  { name: "get_shift", description: "Get a shift's client, time, required skills and regular caregiver.", parameters: obj({ shift_id: { type: "string" } }, ["shift_id"]) },
   {
     name: "find_available_caregivers",
     description: "List caregivers who pass every hard constraint for the shift (availability, travel, skills, languages, pets/smoke, personal-care preference, hours cap).",
-    input_schema: obj({ shift_id: { type: "string" } }, ["shift_id"]),
-    strict: true,
+    parameters: obj({ shift_id: { type: "string" } }, ["shift_id"]),
   },
   {
     name: "rank_candidates",
     description: "Rank eligible caregivers for the shift by 0.6·Qloo taste score + 0.25·continuity + 0.15·travel. Returns top bridges.",
-    input_schema: obj({ shift_id: { type: "string" } }, ["shift_id"]),
-    strict: true,
+    parameters: obj({ shift_id: { type: "string" } }, ["shift_id"]),
   },
   {
     name: "score_pair",
     description: "Qloo taste compatibility for a client and caregiver: score, bridges with Qloo ids and affinities, friction notes.",
-    input_schema: obj({ client_id: { type: "string" }, caregiver_id: { type: "string" } }, ["client_id", "caregiver_id"]),
-    strict: true,
+    parameters: obj({ client_id: { type: "string" }, caregiver_id: { type: "string" } }, ["client_id", "caregiver_id"]),
   },
   {
     name: "draft_offer",
     description: "Draft (not send) the SMS shift offer for a caregiver, grounded in their Qloo bridges with the client.",
-    input_schema: obj({ caregiver_id: { type: "string" }, shift_id: { type: "string" } }, ["caregiver_id", "shift_id"]),
-    strict: true,
+    parameters: obj({ caregiver_id: { type: "string" }, shift_id: { type: "string" } }, ["caregiver_id", "shift_id"]),
   },
   {
     name: "send_offer",
     description: "Request that a drafted offer be sent. Sending always waits for the human scheduler's approval in the UI.",
-    input_schema: obj({ draft_id: { type: "string" } }, ["draft_id"]),
-    strict: true,
+    parameters: obj({ draft_id: { type: "string" } }, ["draft_id"]),
   },
   {
     name: "qloo_search",
-    description: "Look up an entity in Qloo by name (advanced; responses cached).",
-    input_schema: obj({ query: { type: "string" }, type: { type: "string", enum: Object.keys(ENTITY_TYPES) } }, ["query", "type"]),
-    strict: true,
+    description: `Look up an entity in Qloo by name (advanced; responses cached). type is one of: ${Object.keys(ENTITY_TYPES).join(", ")}.`,
+    parameters: obj({ query: { type: "string" }, type: { type: "string" } }, ["query", "type"]),
   },
 ];
 
 export async function qlooSearchTool(query: string, type: EntityKind): Promise<ToolOutput> {
+  if (!Object.prototype.hasOwnProperty.call(ENTITY_TYPES, type)) return { result: { error: `type must be one of ${Object.keys(ENTITY_TYPES).join(", ")}` }, summary: `Bad Qloo type "${type}"` };
   const res = await qloo().search(query, type, 5);
   return {
     result: res.data.map((e) => ({ qloo_id: e.id, name: e.name, type: e.kind })),

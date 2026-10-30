@@ -16,9 +16,9 @@ That is why:
 
 - the score only **ranks** caregivers who already pass every hard constraint. It never excludes anyone;
 - a rotating offer slot goes to the eligible caregiver with the lowest offer rate so far;
-- a **fairness audit** compares offer rates across optional, self-reported groups. These are stored in `src/lib/audit/demographics.ts`, and a test forbids matching, scoring, Qloo and agent code from importing them. The audit runs a caregiver-level permutation test (offers cluster by caregiver, so a naive chi-square overstates significance) and the four-fifths rule. It raises an **ALERT** when either fails, and a human then reviews weights and rotation.
+- a **fairness audit** compares offer rates across optional, self-reported groups. These are stored in `src/lib/audit/demographics.ts`, and a test forbids matching, scoring, Qloo and agent code from importing them. The audit runs a caregiver-level permutation test (offers cluster by caregiver, so a naive chi-square overstates significance) and the four-fifths rule. It raises **WATCH** or **ALERT** when one fails, and a human then reviews weights and rotation.
 
-The audit is designed to catch disparity from any source. On the synthetic agency, part of the disparity comes from geography: caregivers who are the only eligible option in sparse areas get most of their offers. The point is that the agency sees the problem and acts on it.
+The audit reports PASS, WATCH (the four-fifths ratio is below 0.8 but not statistically significant, which is common with small groups) or ALERT. It is designed to catch disparity from any source. On the synthetic agency, part of the disparity comes from geography: caregivers who are the only eligible option in sparse areas get most of their offers. The point is that the agency sees the problem and acts on it.
 
 ## 3. Health data
 

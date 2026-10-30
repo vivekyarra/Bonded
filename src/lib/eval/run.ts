@@ -1,4 +1,4 @@
-import { claudeJson } from "../agent/claude";
+import { llmJson } from "../agent/llm";
 import { separation } from "../audit/stats";
 import { buildProfile } from "../compat/profile";
 import { scorePair } from "../compat/score";
@@ -12,6 +12,7 @@ export interface EvalRow {
   note: string;
   compatible: boolean;
   bonded: number;
+  /** Present when run locally; stripped from the committed results file. */
   bridges: string[];
   llm: number | null;
 }
@@ -28,7 +29,7 @@ export interface EvalSummary {
 }
 
 async function llmScore(p: GoldPair): Promise<number | null> {
-  const out = await claudeJson<{ score: number }>(
+  const out = await llmJson<{ score: number }>(
     "Estimate how well two people would get along over months of home-care visits, using only their favourites. Return a 0-100 score.",
     JSON.stringify({ person_a_favourites: p.a.map((x) => x.name), person_b_favourites: p.b.map((x) => x.name) }),
     { type: "object", properties: { score: { type: "integer" } }, required: ["score"], additionalProperties: false },

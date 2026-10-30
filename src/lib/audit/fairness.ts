@@ -22,6 +22,8 @@ export interface FairnessReport {
   rows: GroupRow[];
   chi: { stat: number; df: number; p: number; pPermutation: number };
   impactRatio: number;
+  /** pass: balanced · watch: four-fifths ratio below 0.8 but not statistically significant · alert: significant disparity */
+  status: "pass" | "watch" | "alert";
   pass: boolean;
   caregiversWithoutOffers: number;
   eligibleCaregivers: number;
@@ -88,10 +90,11 @@ export async function fairnessAudit(scoreFn: ScoreFn, agency: Agency = getAgency
     rows,
     chi: { stat: Number(chi.stat.toFixed(3)), df: chi.df, p: Number(chi.p.toFixed(4)), pPermutation: Number(pPermutation.toFixed(4)) },
     impactRatio: Number(impactRatio.toFixed(3)),
+    status: pPermutation < 0.05 ? "alert" : impactRatio < 0.8 ? "watch" : "pass",
     pass: pPermutation >= 0.05 && impactRatio >= 0.8,
     caregiversWithoutOffers: eligible.filter((id) => !offers.get(id)).length,
     eligibleCaregivers: eligible.length,
     totalOffers: [...offers.values()].reduce((a, b) => a + b, 0),
-    method: `Per recurring schedule, the top ${OFFERS_PER_SCHEDULE - 1} eligible caregivers by score get an offer and one rotating slot goes to the eligible caregiver with the lowest offer rate so far. Tested: groups with ≥${MIN_GROUP_OPPORTUNITIES} eligible opportunities, excluding "Prefer not to say". Pass = caregiver-level permutation p ≥ 0.05 (${PERMUTATIONS} shuffles) and four-fifths impact ratio ≥ 0.8.`,
+    method: `Per recurring schedule, the top ${OFFERS_PER_SCHEDULE - 1} eligible caregivers by score get an offer and one rotating slot goes to the eligible caregiver with the lowest offer rate so far. Tested: groups with ≥${MIN_GROUP_OPPORTUNITIES} eligible opportunities, excluding "Prefer not to say". PASS = caregiver-level permutation p ≥ 0.05 (${PERMUTATIONS} shuffles) and four-fifths impact ratio ≥ 0.8; WATCH = ratio below 0.8 without statistical significance (small groups); ALERT = p < 0.05.`,
   };
 }

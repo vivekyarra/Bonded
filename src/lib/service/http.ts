@@ -10,7 +10,7 @@ export function json(data: unknown, init?: number | ResponseInit) {
 export function fail(err: unknown) {
   if (err instanceof ApprovalRequiredError) return json({ error: err.message }, 403);
   if (!qlooConfigured()) return json({ error: "Qloo is not configured: set QLOO_API_KEY on the server." }, 503);
-  if (err instanceof QlooError) return json({ error: `Qloo unavailable: ${err.message}` }, 502);
+  if (err instanceof QlooError) return json({ error: "Qloo's taste data is unavailable right now. Please try again in a moment." }, 502);
   const msg = err instanceof Error ? err.message : String(err);
   return json({ error: msg }, /Unknown (client|caregiver|shift|schedule)/.test(msg) ? 404 : 500);
 }

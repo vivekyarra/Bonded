@@ -1,8 +1,10 @@
 "use client";
-import Link from "next/link";
+import { Bot, Database, GitMerge, Search, Sparkles, Waypoints } from "lucide-react";
 import type { EvalSummary } from "@/lib/eval/run";
-import { ErrorState, PageHeader, Spinner } from "@/components/ui";
+import { INSIGHT_TABS } from "@/components/insights";
+import { ErrorState, Info, PageHeader, ScoreRing, SegmentedLinks, Skeleton } from "@/components/ui";
 import { useJson } from "@/components/useJson";
+import { CountUp } from "@/components/motion";
 
 interface Data {
   status: "ok" | "not_run";
@@ -10,112 +12,126 @@ interface Data {
   gold: { id: string; note: string; compatible: boolean; a: string[]; b: string[] }[];
 }
 
-const pct = (x: number) => `${Math.round(x * 100)}%`;
+const STEPS = [
+  { icon: Search, title: "Resolve", body: "Each favourite → Qloo /search → entity ID" },
+  { icon: Waypoints, title: "Expand", body: "/v2/insights per domain, top 50 with affinity" },
+  { icon: GitMerge, title: "Overlap", body: "Weighted Jaccard across music, TV, film, places, books" },
+  { icon: Sparkles, title: "Bridges", body: "Entities both people score highly, with evidence" },
+  { icon: Database, title: "Cache", body: "Every response cached; nothing guessed" },
+];
+
+const pct = (x: number) => Math.round(x * 100);
 
 export default function EvaluationPage() {
   const d = useJson<Data>("/api/eval");
-  if (d.loading) return <Spinner />;
-  if (d.error || !d.data) return <ErrorState error={d.error ?? "No data"} onRetry={d.reload} />;
-  const r = d.data.results;
+  const r = d.data?.results;
   const rows = new Map(r?.rows.map((x) => [x.id, x]));
 
   return (
-    <div className="space-y-8">
-      <PageHeader eyebrow="The “only works because of Qloo” test" title="Why Qloo">
-        An LLM can guess that two people “might both like music”. Qloo computes taste overlap across domains and generations. We test both on a hand-written gold
-        set of 20 pairs, half obviously compatible, half obviously not.
-      </PageHeader>
+    <div className="space-y-6">
+      <PageHeader title="Insights" subtitle="Why it only works with Qloo" actions={<SegmentedLinks items={INSIGHT_TABS} active="/evaluation" />} />
+      {d.error && <ErrorState error={d.error} onRetry={d.reload} />}
+      {d.loading && <Skeleton className="h-64 rounded-3xl" />}
 
-      {r ? (
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="card border-coral p-6">
-            <p className="label">Bonded · Qloo taste graph</p>
-            <p className="mt-2 text-5xl font-semibold tabular-nums text-coral">{pct(r.bonded.separation)}</p>
-            <p className="mt-1 text-sm text-muted">separation · {pct(r.bonded.accuracy)} accuracy at {r.threshold}</p>
-          </div>
-          <div className="card p-6">
-            <p className="label">LLM-only · raw favourites{r.model ? ` · ${r.model}` : ""}</p>
-            <p className="mt-2 text-5xl font-semibold tabular-nums">{r.llm ? pct(r.llm.separation) : "—"}</p>
-            <p className="mt-1 text-sm text-muted">{r.llm ? `separation · ${pct(r.llm.accuracy)} accuracy at ${r.threshold}` : "Baseline not run (no ANTHROPIC_API_KEY at eval time)."}</p>
-          </div>
-          <p className="text-xs text-muted sm:col-span-2">
-            Separation = share of (compatible, incompatible) pairs where the compatible pair scores higher (ROC AUC; 50% is chance). Run {new Date(r.ranAt).toLocaleString()} against Qloo {r.qlooMode}.
-          </p>
-        </section>
-      ) : (
-        <div className="card p-6">
-          <p className="font-serif text-lg">Evaluation not run on this deployment yet</p>
-          <p className="mt-1 text-sm text-muted">
-            Run <code>npm run eval</code> with <code>QLOO_API_KEY</code> (and <code>ANTHROPIC_API_KEY</code> for the baseline), or the “Warm Qloo cache” GitHub workflow, then
-            redeploy. The gold set is below.
-          </p>
-        </div>
+      {d.data && (
+        <>
+          {r ? (
+          <section className="grid animate-rise gap-4 sm:grid-cols-2">
+            <div className="glass relative overflow-hidden p-6 ring-2 ring-teal/30">
+              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-teal/20 blur-2xl" />
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal to-violet text-white">
+                  <Sparkles size={16} />
+                </span>
+                <p className="font-semibold">Bonded · Qloo</p>
+              </div>
+              <div className="mt-5 flex items-center gap-5">
+                <ScoreRing value={r ? pct(r.bonded.separation) : null} size={104} stroke={9} label="separation" />
+                <div>
+                  <p className="font-display text-4xl font-bold">{r ? <CountUp to={pct(r.bonded.separation)} suffix="%" /> : "—"}</p>
+                  <p className="text-sm text-muted">separation</p>
+                  {r && <p className="mt-1 text-xs text-muted">{pct(r.bonded.accuracy)}% accuracy at {r.threshold}</p>}
+                </div>
+              </div>
+            </div>
+            <div className="glass relative overflow-hidden p-6">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink/[0.07]">
+                  <Bot size={17} />
+                </span>
+                <p className="font-semibold">LLM only{r?.model ? ` · ${r.model}` : ""}</p>
+              </div>
+              <div className="mt-5 flex items-center gap-5">
+                <ScoreRing value={r?.llm ? pct(r.llm.separation) : null} size={104} stroke={9} label="LLM separation" />
+                <div>
+                  <p className="font-display text-4xl font-bold">{r?.llm ? `${pct(r.llm.separation)}%` : "—"}</p>
+                  <p className="text-sm text-muted">separation</p>
+                  {r?.llm ? <p className="mt-1 text-xs text-muted">{pct(r.llm.accuracy)}% accuracy at {r.threshold}</p> : <p className="mt-1 text-xs text-muted">Run with GEMINI_API_KEY</p>}
+                </div>
+              </div>
+            </div>
+          </section>
+          ) : (
+            <div className="glass flex items-center gap-4 p-5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-tealsoft text-teal">
+                <Sparkles size={20} />
+              </span>
+              <p className="text-sm text-muted">
+                No evaluation on this deployment yet. Run <code className="font-mono">npm run eval</code> or the “Live Qloo check & evaluation” workflow.
+              </p>
+            </div>
+          )}
+
+          <section className="glass animate-rise p-5 [animation-delay:100ms]">
+            <h2 className="text-[17px]">How Bonded uses Qloo</h2>
+            <ol className="mt-4 grid gap-3 sm:grid-cols-5">
+              {STEPS.map(({ icon: Icon, title, body }, i) => (
+                <li key={title} className="glass-inset relative p-4">
+                  <span className="absolute right-3 top-3 text-[12.5px] font-bold text-muted">{i + 1}</span>
+                  <Icon size={20} className="text-teal" />
+                  <p className="mt-2 font-semibold">{title}</p>
+                  <p className="mt-0.5 text-xs text-muted">{body}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="glass animate-rise p-2 [animation-delay:160ms]">
+            <div className="flex items-center gap-2 px-3 pb-1 pt-3">
+              <h2 className="text-[17px]">Gold set</h2>
+              <Info>20 hand-written pairs, labelled before any run: 10 obviously compatible, 10 obviously not. Separation = share of (compatible, incompatible) pairs ranked correctly.</Info>
+            </div>
+            <ul className="divide-y divide-ink/[0.06]">
+              {d.data.gold.map((g) => {
+                const row = rows.get(g.id);
+                return (
+                  <li key={g.id} className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-3 sm:grid-cols-[1fr_auto_auto]">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{g.note}</p>
+                      <p className="truncate text-xs text-muted">
+                        {g.a.join(", ")} ↔ {g.b.join(", ")}
+                      </p>
+                    </div>
+                    <span className={`justify-self-end rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold ${g.compatible ? "bg-good/10 text-good" : "bg-ink/[0.06] text-muted"}`}>
+                      {g.compatible ? "match" : "no match"}
+                    </span>
+                    <div className="col-span-2 flex items-center gap-4 text-xs tabular-nums sm:col-span-1">
+                      <span className="w-20">
+                        <span className="text-muted">Bonded </span>
+                        <span className="font-semibold">{row?.bonded ?? "—"}</span>
+                      </span>
+                      <span className="w-16">
+                        <span className="text-muted">LLM </span>
+                        <span className="font-semibold">{row?.llm ?? "—"}</span>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </>
       )}
-
-      <section className="card overflow-x-auto p-6">
-        <h2 className="text-xl">Gold set</h2>
-        <table className="mt-3 w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="text-left text-xs text-muted">
-              <th className="py-1 font-medium">Pair</th>
-              <th className="font-medium">Label</th>
-              <th className="font-medium">Older person</th>
-              <th className="font-medium">Younger person</th>
-              <th className="font-medium">Bonded</th>
-              <th className="font-medium">LLM-only</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {d.data.gold.map((g) => {
-              const row = rows.get(g.id);
-              return (
-                <tr key={g.id} className="align-top">
-                  <td className="py-2 pr-2">
-                    <span className="font-semibold">{g.id}</span> <span className="text-muted">{g.note}</span>
-                  </td>
-                  <td>
-                    <span className={g.compatible ? "chip-teal" : "chip"}>{g.compatible ? "compatible" : "incompatible"}</span>
-                  </td>
-                  <td className="pr-2 text-xs">{g.a.join(", ")}</td>
-                  <td className="pr-2 text-xs">{g.b.join(", ")}</td>
-                  <td className="tabular-nums">
-                    {row?.bonded ?? "—"}
-                    {row?.bridges.length ? <span className="block text-[11px] text-muted">{row.bridges.join(", ")}</span> : null}
-                  </td>
-                  <td className="tabular-nums">{row?.llm ?? "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
-
-      <section className="card p-6">
-        <h2 className="text-xl">How Bonded uses the Qloo API</h2>
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm">
-          <li>
-            <strong>Resolve seeds:</strong> every favourite goes through <code>GET /search</code>; unresolved names are dropped, never guessed.
-          </li>
-          <li>
-            <strong>Expand profiles:</strong> one <code>GET /v2/insights</code> per domain (artist, TV, film, place in Phoenix, book) with all of the person's
-            seeds as <code>signal.interests.entities</code>, top 50 with affinity.
-          </li>
-          <li>
-            <strong>Score:</strong> weighted Jaccard per domain (Σ min / Σ max affinity), domain weights music .30 / TV .25 / film .15 / food .20 / books .10,
-            plus a small seed bonus.
-          </li>
-          <li>
-            <strong>Bridges:</strong> shared entities ranked by min(affinity) so they matter to both people; max two per domain; union-signal fallback labelled
-            “weaker”.
-          </li>
-          <li>
-            <strong>Cache:</strong> every response is cached by request hash (7-day TTL) and a warm snapshot ships with the deploy.
-          </li>
-        </ol>
-        <Link href="/board" className="mt-4 inline-block text-sm font-semibold text-teal">
-          See it on the Match Board →
-        </Link>
-      </section>
     </div>
   );
 }

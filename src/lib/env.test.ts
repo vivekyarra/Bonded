@@ -6,7 +6,7 @@ describe("env", () => {
     expect(env.qlooBaseUrl.endsWith("/")).toBe(false);
     expect(env.qlooBaseUrl).toMatch(/^https:\/\//);
   });
-  it("pins a Claude model", () => {
-    expect(env.claudeModel.length).toBeGreaterThan(0);
+  it("pins a Gemini model", () => {
+    expect(env.geminiModel).toMatch(/^gemini-/);
   });
 });

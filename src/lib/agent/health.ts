@@ -3,7 +3,7 @@ import { byId, caregiverName, clientName } from "../agency/query";
 import type { VisitFeedback } from "../agency/types";
 import { rankForSchedule } from "../matcher/rank";
 import { pairScore, quickPairScore } from "../service/engine";
-import { claudeJson } from "./claude";
+import { llmJson } from "./llm";
 import { HEALTH_LABELS, HEALTH_SYSTEM, type HealthLabel } from "./prompts";
 
 export interface HealthFlag {
@@ -60,16 +60,16 @@ const KEYWORDS: [HealthLabel, RegExp][] = [
   ["rapport", /\b(great day|laughed|loved|talked about .* for an hour|cooked together)/i],
 ];
 
-/** Keyword classifier over the fixed label set (used without Claude, and as a cross-check). */
+/** Keyword classifier over the fixed label set (used without an LLM key, and as a fallback). */
 export function classifyNote(note: string): HealthLabel[] {
   const out = KEYWORDS.filter(([, re]) => re.test(note)).map(([l]) => l);
   if (/someone else could come/i.test(note)) out.push("conflict");
   return out.length ? [...new Set(out)] : ["none"];
 }
 
-async function classifyAll(notes: string[]): Promise<{ labels: HealthLabel[][]; by: "claude" | "keywords" }> {
+async function classifyAll(notes: string[]): Promise<{ labels: HealthLabel[][]; by: "llm" | "keywords" }> {
   if (!notes.length) return { labels: [], by: "keywords" };
-  const out = await claudeJson<{ items: { index: number; labels: string[] }[] }>(
+  const out = await llmJson<{ items: { index: number; labels: string[] }[] }>(
     HEALTH_SYSTEM,
     notes.map((n, i) => `${i}: ${n}`).join("\n"),
     {
@@ -94,7 +94,7 @@ async function classifyAll(notes: string[]): Promise<{ labels: HealthLabel[][]; 
       const l = (out.items.find((x) => x.index === i)?.labels ?? []).filter((x): x is HealthLabel => (HEALTH_LABELS as readonly string[]).includes(x));
       return l.length ? l : (["none"] as HealthLabel[]);
     });
-    return { labels, by: "claude" };
+    return { labels, by: "llm" };
   }
   return { labels: notes.map(classifyNote), by: "keywords" };
 }
@@ -124,7 +124,7 @@ export function listMatches(): HealthMatch[] {
 }
 
 /** The weekly health review: trend + note labels → flags with a suggested action. A human reviews every flag. */
-export async function healthReview(): Promise<{ flags: HealthFlag[]; matches: HealthMatch[]; classifiedBy: "claude" | "keywords" }> {
+export async function healthReview(): Promise<{ flags: HealthFlag[]; matches: HealthMatch[]; classifiedBy: "llm" | "keywords" }> {
   const agency = getAgency();
   const matches = listMatches();
   const candidates = matches.filter((m) => m.flagged);

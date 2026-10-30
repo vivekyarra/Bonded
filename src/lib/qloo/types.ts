@@ -27,7 +27,7 @@ export const DOMAIN_LABEL: Record<Domain, string> = {
   music: "Music",
   tv: "TV",
   film: "Film",
-  food: "Food & places",
+  food: "Local places",
   books: "Books",
 };
 
@@ -54,6 +54,9 @@ export interface QlooEntity {
   description?: string;
   year?: string;
   address?: string;
+  /** Coordinates (places). */
+  lat?: number;
+  lng?: number;
   /** Seed entity ids that Qloo reports as contributing to this result (explainability). */
   explainedBy?: string[];
 }

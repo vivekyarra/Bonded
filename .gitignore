@@ -13,3 +13,5 @@ npm-debug.log*
 /test-results/
 /playwright-report/
 .cache/
+# Qloo response data must not be published (hackathon terms); built at deploy time.
+data/qloo-cache.json

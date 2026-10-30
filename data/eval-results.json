@@ -1,0 +1,154 @@
+{
+  "ranAt": "2026-10-30T09:55:08.276Z",
+  "qlooMode": "live",
+  "model": null,
+  "n": 20,
+  "threshold": 50,
+  "bonded": {
+    "separation": 0.94,
+    "accuracy": 0.85
+  },
+  "llm": null,
+  "rows": [
+    {
+      "id": "g01",
+      "note": "Ranchera grandmother, regional-Mexican caregiver",
+      "compatible": true,
+      "bonded": 64,
+      "llm": null
+    },
+    {
+      "id": "g02",
+      "note": "Jazz era vs modern vocal jazz",
+      "compatible": true,
+      "bonded": 72,
+      "llm": null
+    },
+    {
+      "id": "g03",
+      "note": "Outlaw country across generations",
+      "compatible": true,
+      "bonded": 73,
+      "llm": null
+    },
+    {
+      "id": "g04",
+      "note": "Soul then and now",
+      "compatible": true,
+      "bonded": 39,
+      "llm": null
+    },
+    {
+      "id": "g05",
+      "note": "Crooners",
+      "compatible": true,
+      "bonded": 94,
+      "llm": null
+    },
+    {
+      "id": "g06",
+      "note": "Cooking television",
+      "compatible": true,
+      "bonded": 58,
+      "llm": null
+    },
+    {
+      "id": "g07",
+      "note": "Cosy mysteries",
+      "compatible": true,
+      "bonded": 31,
+      "llm": null
+    },
+    {
+      "id": "g08",
+      "note": "Classic and modern country women",
+      "compatible": true,
+      "bonded": 97,
+      "llm": null
+    },
+    {
+      "id": "g09",
+      "note": "Sixties rock and its heirs",
+      "compatible": true,
+      "bonded": 94,
+      "llm": null
+    },
+    {
+      "id": "g10",
+      "note": "Musicals",
+      "compatible": true,
+      "bonded": 53,
+      "llm": null
+    },
+    {
+      "id": "g11",
+      "note": "Lawrence Welk vs nu-metal",
+      "compatible": false,
+      "bonded": 50,
+      "llm": null
+    },
+    {
+      "id": "g12",
+      "note": "Westerns vs reality dating and EDM",
+      "compatible": false,
+      "bonded": 25,
+      "llm": null
+    },
+    {
+      "id": "g13",
+      "note": "Big band vs metal",
+      "compatible": false,
+      "bonded": 43,
+      "llm": null
+    },
+    {
+      "id": "g14",
+      "note": "Golden Girls vs prestige crime and drill",
+      "compatible": false,
+      "bonded": 17,
+      "llm": null
+    },
+    {
+      "id": "g15",
+      "note": "Ranchera vs EDM club",
+      "compatible": false,
+      "bonded": 3,
+      "llm": null
+    },
+    {
+      "id": "g16",
+      "note": "Jazz and Jeopardy vs metal and zombies",
+      "compatible": false,
+      "bonded": 23,
+      "llm": null
+    },
+    {
+      "id": "g17",
+      "note": "Little House vs club",
+      "compatible": false,
+      "bonded": 18,
+      "llm": null
+    },
+    {
+      "id": "g18",
+      "note": "Musicals vs action and metal",
+      "compatible": false,
+      "bonded": 5,
+      "llm": null
+    },
+    {
+      "id": "g19",
+      "note": "Antiques and crooners vs EDM",
+      "compatible": false,
+      "bonded": 21,
+      "llm": null
+    },
+    {
+      "id": "g20",
+      "note": "Classic Hollywood vs nu-metal",
+      "compatible": false,
+      "bonded": 46,
+      "llm": null
+    }
+  ]
+}

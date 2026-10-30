@@ -16,4 +16,4 @@ Bonded is an agent that matches caregivers and clients by shared taste, using Ql
 
 **Why Qloo:** on our 20-pair gold set, Bonded separated compatible from incompatible pairs [X]% of the time, against [Y]% for an LLM-only baseline (see /evaluation; fill in from docs/evaluation.md after `npm run eval`). Every song, show and place Bonded mentions carries its Qloo entity ID.
 
-**Built with:** Next.js, TypeScript, Qloo Insights and Search APIs, and Claude (tool use). The demo runs on a fully synthetic agency.
+**Built with:** Next.js, TypeScript, Qloo Insights and Search APIs, and Google Gemini (function calling, free tier). The demo runs on a fully synthetic agency.

@@ -42,7 +42,7 @@ const CLUSTERS: Record<string, Pool> = {
   ranchera_mexicana: {
     artist: ["Pedro Infante", "Vicente Fernández", "Lola Beltrán", "Javier Solís", "Christian Nodal", "Luis Miguel", "Natalia Lafourcade", "Selena"],
     movie: ["Nosotros los pobres", "Coco", "Selena"],
-    tv_show: ["El Chavo del Ocho", "María la del Barrio"],
+    tv_show: ["El Chavo", "María la del Barrio"],
     book: ["One Hundred Years of Solitude", "Like Water for Chocolate"],
     place: ["Barrio Café", "Carolina's Mexican Food", "Los Dos Molinos"],
   },
@@ -65,7 +65,7 @@ const CLUSTERS: Record<string, Pool> = {
     movie: ["Barbie", "Mamma Mia!", "A Star Is Born", "Top Gun: Maverick"],
     tv_show: ["Stranger Things", "Bridgerton", "Grey's Anatomy", "The Office", "Ted Lasso"],
     book: ["The Seven Husbands of Evelyn Hugo", "Where the Crawdads Sing"],
-    place: ["Lux Central", "Postino WineCafé"],
+    place: ["Lux Central", "Postino Central"],
   },
   classic_rock_folk: {
     artist: ["The Beatles", "Simon & Garfunkel", "Elvis Presley", "Fleetwood Mac", "Bob Dylan", "Harry Styles"],
@@ -89,7 +89,7 @@ const CLUSTERS: Record<string, Pool> = {
     tv_show: ["Jeopardy!", "Wheel of Fortune", "The Price Is Right", "Family Feud"],
   },
   cooking: {
-    tv_show: ["Chopped", "The Great British Bake Off", "Diners, Drive-Ins and Dives", "Julia Child's The French Chef", "Queer Eye"],
+    tv_show: ["Chopped", "The Great British Baking Show", "Diners, Drive-Ins and Dives", "The French Chef", "Queer Eye"],
     book: ["Like Water for Chocolate"],
     movie: ["Julie & Julia", "Chef"],
     place: ["Pizzeria Bianco", "Matt's Big Breakfast", "Chompie's", "Pho Thanh", "Welcome Diner"],
@@ -193,6 +193,7 @@ function search(params: Record<string, string>) {
       types: [ENTITY_TYPES[e.kind]],
       popularity: 0.5 + unit(e.id) / 2,
       properties: { short_description: "Offline fixture entity (not Qloo data)" },
+      ...(e.kind === "place" ? { location: { lat: 33.45 + (unit(e.id) - 0.5) * 0.2, lon: -112.07 + (unit(e.name) - 0.5) * 0.2 } } : {}),
     })),
   };
 }

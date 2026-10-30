@@ -1,4 +1,5 @@
 import { notifyFamily } from "@/lib/agent/tools";
+import { isId } from "@/lib/service/guard";
 import { body, fail, json } from "@/lib/service/http";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     shiftId: string;
     approved_by_human: boolean;
   }>(req);
-  if (!clientId || !caregiverId || !shiftId) return json({ error: "clientId, caregiverId, shiftId required" }, 400);
+  if (!isId(clientId) || !isId(caregiverId) || !isId(shiftId)) return json({ error: "clientId, caregiverId, shiftId required" }, 400);
   try {
     return json(await notifyFamily(clientId, caregiverId, shiftId, approved_by_human));
   } catch (err) {

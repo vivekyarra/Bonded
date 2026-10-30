@@ -121,3 +121,27 @@ describe("slimResponse", () => {
     expect(JSON.stringify(slim)).not.toContain("keywords");
   });
 });
+
+describe("request coalescing", () => {
+  it("sends one upstream request for identical concurrent calls", async () => {
+    let calls = 0;
+    const slow = new QlooClient(async () => {
+      calls++;
+      await new Promise((r) => setTimeout(r, 20));
+      return { results: [{ entity_id: "Z1", name: "Coalesced" }] };
+    }, "fixture");
+    const all = await Promise.all(Array.from({ length: 25 }, () => slow.search("coalesce-probe", "artist")));
+    expect(calls).toBe(1);
+    expect(all.every((r) => r.data[0].id === "Z1")).toBe(true);
+  });
+});
+
+describe("backoff", () => {
+  it("honours Retry-After and caps exponential waits", async () => {
+    const { backoffMs } = await import("./client");
+    expect(backoffMs(0, "2")).toBe(2000);
+    expect(backoffMs(0, "999")).toBe(10_000);
+    expect(backoffMs(0, null)).toBeGreaterThanOrEqual(600);
+    expect(backoffMs(10, null)).toBeLessThan(8_300);
+  });
+});

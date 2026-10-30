@@ -1,8 +1,10 @@
-name: Warm Qloo cache & run evaluation
+name: Live Qloo check & evaluation
 
-# Run manually after adding the QLOO_API_KEY (and optionally ANTHROPIC_API_KEY) repository
-# secrets. Commits data/qloo-cache.json, data/eval-results.json and docs/evaluation.md so
-# the deployed demo is instant and the evaluation page has real numbers.
+# Run manually after adding the QLOO_API_KEY (and optionally GEMINI_API_KEY) repository
+# secrets. Verifies the live API, exercises the full warm-cache path, and commits only the
+# evaluation scores. The Qloo response cache itself is never committed: Qloo's hackathon
+# terms forbid publishing response data in a public repository. Vercel builds it at deploy
+# time instead (`npm run vercel-build`).
 on:
   workflow_dispatch:
 
@@ -10,14 +12,14 @@ permissions:
   contents: write
 
 jobs:
-  warm:
+  live:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       QLOO_API_KEY: ${{ secrets.QLOO_API_KEY }}
       QLOO_BASE_URL: https://hackathon.api.qloo.com
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      CLAUDE_MODEL: claude-opus-5-5
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.8-flash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,14 +29,14 @@ jobs:
       - run: npm ci
       - name: Qloo smoke test
         run: npm run qloo:smoke
-      - name: Warm cache
+      - name: Warm cache (verification only, not committed)
         run: npm run warm-cache
       - name: Gold-set evaluation
         run: npm run eval
-      - name: Commit results
+      - name: Commit evaluation scores
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/qloo-cache.json data/eval-results.json docs/evaluation.md
-          git diff --cached --quiet || git commit -m "Warm Qloo cache and record gold-set evaluation"
+          git add data/eval-results.json docs/evaluation.md
+          git diff --cached --quiet || git commit -m "Record gold-set evaluation"
           git push

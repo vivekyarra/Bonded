@@ -1,9 +1,9 @@
 import { getAgency } from "../agency/sunrise";
 import { byId, caregiverName, clientName, scheduleLabel, workedTogether } from "../agency/query";
-import { claudeJson } from "../agent/claude";
+import { llmJson } from "../agent/llm";
 import { topEntities } from "../compat/profile";
 import { DEFAULT_WEIGHTS, type TasteProfile } from "../compat/types";
-import { hasClaude } from "../env";
+import { env, hasLlm } from "../env";
 import { autoMatch, composite, MATCH_WEIGHTS, eligibleForSchedule } from "../matcher/rank";
 import { DOMAINS, DOMAIN_LABEL, type Domain } from "../qloo/types";
 import { pairScore, personProfile, quickPairScore } from "./engine";
@@ -84,15 +84,15 @@ export async function autoMatchView(scheduleIds: string[]) {
 }
 
 /**
- * LLM-only baseline: Claude rates compatibility from the raw favourites alone, with no
+ * LLM-only baseline: Gemini rates compatibility from the raw favourites alone, with no
  * Qloo data. Anything it names carries no Qloo id, which the UI points out.
  */
 export async function llmOnlyBaseline(clientId: string, caregiverId: string) {
   const q = byId(getAgency());
   const c = q.client(clientId);
   const g = q.caregiver(caregiverId);
-  if (!hasClaude()) return { available: false as const, reason: "Set ANTHROPIC_API_KEY to run the live LLM-only baseline." };
-  const out = await claudeJson<{ score: number; shared_interests: string[]; rationale: string }>(
+  if (!hasLlm()) return { available: false as const, reason: "Set GEMINI_API_KEY to run the live LLM-only baseline." };
+  const out = await llmJson<{ score: number; shared_interests: string[]; rationale: string }>(
     "You estimate how well two people would get along over long home-care visits, using only their listed favourites. Return a 0-100 score, the interests you believe they share, and one sentence of rationale.",
     JSON.stringify({ person_a_favourites: c.seeds.map((s) => s.name), person_b_favourites: g.seeds.map((s) => s.name) }),
     {
@@ -102,8 +102,8 @@ export async function llmOnlyBaseline(clientId: string, caregiverId: string) {
       additionalProperties: false,
     },
   );
-  if (!out) return { available: false as const, reason: "Claude did not return a result." };
-  return { available: true as const, score: Math.max(0, Math.min(100, Math.round(out.score))), sharedInterests: out.shared_interests, rationale: out.rationale };
+  if (!out) return { available: false as const, reason: "Gemini did not return a result (free-tier quota?)." };
+  return { available: true as const, model: env.geminiModel, score: Math.max(0, Math.min(100, Math.round(out.score))), sharedInterests: out.shared_interests, rationale: out.rationale };
 }
 
 /** Match Board left column: open recurring schedules (no Qloo calls). */

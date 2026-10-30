@@ -1,8 +1,9 @@
 "use client";
+import { AlertTriangle, ArrowLeft, Bot, Check, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TasteRadar } from "@/components/TasteRadar";
-import { Avatar, BridgeChip, CachedBadge, ErrorState, ScoreRing, Spinner } from "@/components/ui";
+import { Avatar, CachedBadge, DomainIcon, domainLabel, ErrorState, Info, ScoreRing, Segmented, Skeleton, Spinner } from "@/components/ui";
 import { fetchJson, post, useJson } from "@/components/useJson";
 
 interface Seed {
@@ -26,7 +27,7 @@ interface Bridge {
 interface Detail {
   client: { id: string; name: string; age: number; area: string; seeds: Seed[]; unresolved: string[]; eraAnswer?: string };
   caregiver: { id: string; name: string; age: number; area: string; seeds: Seed[]; unresolved: string[]; blurb: string };
-  score: { tasteScore: number; raw: number; seedBonus: number; bridges: Bridge[]; friction: { domain: string; text: string }[]; perDomain: Record<string, { overlap: number; weight: number; shared: number }> };
+  score: { tasteScore: number; bridges: Bridge[]; friction: { domain: string; text: string }[]; perDomain: Record<string, { overlap: number; weight: number; shared: number }> };
   radar: { domain: string; client: number; caregiver: number }[];
   why: {
     weights: { taste: number; continuity: number; travel: number };
@@ -40,21 +41,31 @@ interface Detail {
   };
   cached: boolean;
 }
-type Llm = { available: true; score: number; sharedInterests: string[]; rationale: string } | { available: false; reason: string };
+type Llm = { available: true; score: number; sharedInterests: string[]; rationale: string; model?: string } | { available: false; reason: string };
+type Tab = "overview" | "bridges" | "overlap" | "why" | "llm";
 
-const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 100)}%`);
-
-function SeedList({ seeds, unresolved }: { seeds: Seed[]; unresolved: string[] }) {
+function Bar({ value, tone }: { value: number | null; tone: "teal" | "coral" }) {
+  const v = value === null ? 0 : Math.round(value * 100);
   return (
-    <ul className="mt-2 flex flex-wrap gap-1.5">
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/[0.07]">
+        <div className={`h-full rounded-full ${tone === "teal" ? "bg-teal" : "bg-coral"}`} style={{ width: `${v}%`, transition: "width .8s cubic-bezier(.2,.8,.2,1)" }} />
+      </div>
+      <span className="w-8 text-right text-[12.5px] tabular-nums text-muted">{value === null ? "—" : `${v}%`}</span>
+    </div>
+  );
+}
+
+function Seeds({ seeds, unresolved }: { seeds: Seed[]; unresolved: string[] }) {
+  return (
+    <ul className="flex flex-wrap gap-1.5">
       {seeds.map((s) => (
-        <li key={s.qlooId} className="rounded-full border border-line px-2.5 py-0.5 text-xs" title={`Qloo ID ${s.qlooId}`}>
+        <li key={s.qlooId} className="rounded-full bg-ink/[0.05] px-2.5 py-1 text-xs" title={`Qloo ID ${s.qlooId}`}>
           {s.name}
-          {s.source === "era" && <span className="ml-1 text-muted">(era)</span>}
         </li>
       ))}
       {unresolved.map((u) => (
-        <li key={u} className="rounded-full border border-dashed border-line px-2.5 py-0.5 text-xs text-muted line-through" title="Not found in Qloo, so not used">
+        <li key={u} className="rounded-full px-2.5 py-1 text-xs text-muted line-through" title="Not found in Qloo, so not used">
           {u}
         </li>
       ))}
@@ -62,16 +73,47 @@ function SeedList({ seeds, unresolved }: { seeds: Seed[]; unresolved: string[] }
   );
 }
 
+function DetailSkeleton() {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading">
+      <div className="glass p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <Skeleton className="h-24 w-24 rounded-full" />
+          <Skeleton className="h-16 w-16 rounded-full" />
+        </div>
+        <Skeleton className="mx-auto mt-6 h-4 w-1/2" />
+      </div>
+      <div className="glass space-y-4 p-6">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-12" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function MatchDetail({ params }: { params: { clientId: string; caregiverId: string } }) {
   const d = useJson<Detail>("/api/compat/pair", post(params));
-  const [open, setOpen] = useState<string | null>(null);
-  const [mode, setMode] = useState<"bonded" | "llm">("bonded");
+  const [tab, setTab] = useState<Tab>("bridges");
+  const [desktop, setDesktop] = useState(false);
+  // Laptops show bridges, overlap and "why" side by side; phones use tabs.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => {
+      setDesktop(mq.matches);
+      setTab((t) => (mq.matches && ["bridges", "overlap", "why"].includes(t) ? "overview" : !mq.matches && t === "overview" ? "bridges" : t));
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   const [llm, setLlm] = useState<Llm | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
 
-  async function showLlm() {
-    setMode("llm");
-    if (llm) return;
+  async function openTab(t: Tab) {
+    setTab(t);
+    if (t !== "llm" || llm || llmLoading) return;
     setLlmLoading(true);
     try {
       setLlm(await fetchJson<Llm>("/api/compare/llm", post(params)));
@@ -82,199 +124,267 @@ export default function MatchDetail({ params }: { params: { clientId: string; ca
     }
   }
 
-  if (d.loading) return <Spinner label="Asking Qloo for both taste profiles…" />;
-  if (d.error || !d.data) return <ErrorState error={d.error ?? "No data"} onRetry={d.reload} />;
-  const { client, caregiver, score, radar, why } = d.data;
-
   return (
-    <div className="space-y-6">
-      <Link href="/board" className="text-sm text-muted hover:text-ink">
-        ← Match Board
+    <div className="space-y-5">
+      <Link href="/board" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
+        <ArrowLeft size={16} /> Matches
       </Link>
-      <section className="card p-6">
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="flex min-w-[200px] flex-1 items-center gap-3">
-            <Avatar name={client.name} size={56} ring="teal" />
-            <div>
-              <p className="label">Client</p>
-              <h1 className="text-2xl">
-                {client.name}, {client.age}
-              </h1>
-              <p className="text-xs text-muted">{client.area}</p>
-            </div>
+      {d.loading && <DetailSkeleton />}
+      {d.error && <ErrorState error={d.error} onRetry={d.reload} />}
+      {d.data && <Body data={d.data} tab={tab} openTab={openTab} llm={llm} llmLoading={llmLoading} desktop={desktop} />}
+    </div>
+  );
+}
+
+function Body({ data, tab, openTab, llm, llmLoading, desktop }: { data: Detail; tab: Tab; openTab: (t: Tab) => void; llm: Llm | null; llmLoading: boolean; desktop: boolean }) {
+  const { client, caregiver, score, radar, why } = data;
+  const cFirst = client.name.split(" ")[0];
+  const gFirst = caregiver.name.split(" ")[0];
+  return (
+    <>
+      <section className="glass animate-rise overflow-hidden p-5 sm:p-6">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-40">
+            <Avatar name={client.name} size={64} ring="teal" />
+            <h1 className="mt-2.5 max-w-full truncate text-xl sm:text-2xl">
+              <span className="sm:hidden">{cFirst}</span>
+              <span className="hidden sm:inline">{client.name}</span>
+            </h1>
+            <p className="text-xs text-muted">
+              {client.age} · {client.area}
+            </p>
           </div>
-          <ScoreRing value={score.tasteScore} size={84} />
-          <div className="flex min-w-[200px] flex-1 items-center justify-end gap-3 text-right">
-            <div>
-              <p className="label">Caregiver</p>
-              <h2 className="text-2xl">
-                {caregiver.name}, {caregiver.age}
-              </h2>
-              <p className="text-xs text-muted">{caregiver.blurb || caregiver.area}</p>
-            </div>
-            <Avatar name={caregiver.name} size={56} ring="coral" />
+          <div className="relative flex flex-1 items-center justify-center">
+            <div className="bridge-line absolute inset-x-0 h-[3px] rounded-full opacity-60" />
+            <span className="glass-strong relative scale-[0.78] rounded-full p-1 shadow-lift sm:scale-100">
+              <ScoreRing value={score.tasteScore} size={96} stroke={8} />
+            </span>
+          </div>
+          <div className="flex w-20 min-w-0 flex-col items-center text-center sm:w-40">
+            <Avatar name={caregiver.name} size={64} ring="coral" />
+            <h2 className="mt-2.5 max-w-full truncate font-serif text-xl font-normal sm:text-2xl">{caregiver.name}</h2>
+            <p className="text-xs text-muted">
+              {caregiver.age} · {caregiver.area}
+            </p>
           </div>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 border-t border-ink/[0.07] pt-4 sm:grid-cols-2">
           <div>
-            <p className="label">{client.name.split(" ")[0]}'s favourites (resolved by Qloo)</p>
-            <SeedList seeds={client.seeds} unresolved={client.unresolved} />
-            {client.eraAnswer && <p className="mt-2 text-xs text-muted">Era question: “{client.eraAnswer}”</p>}
+            <p className="label mb-2">{cFirst} loves</p>
+            <Seeds seeds={client.seeds} unresolved={client.unresolved} />
           </div>
-          <div className="md:text-right">
-            <p className="label">{caregiver.name.split(" ")[0]}'s favourites</p>
-            <SeedList seeds={caregiver.seeds} unresolved={caregiver.unresolved} />
+          <div>
+            <p className="label mb-2">{gFirst} loves</p>
+            <Seeds seeds={caregiver.seeds} unresolved={caregiver.unresolved} />
           </div>
         </div>
       </section>
 
-      <div className="flex items-center gap-2" role="tablist" aria-label="Comparison">
-        <button role="tab" aria-selected={mode === "bonded"} className={mode === "bonded" ? "btn-primary" : "btn-ghost"} onClick={() => setMode("bonded")}>
-          Bonded match (Qloo)
-        </button>
-        <button role="tab" aria-selected={mode === "llm"} className={mode === "llm" ? "btn-primary" : "btn-ghost"} onClick={showLlm}>
-          LLM-only match
-        </button>
-        <CachedBadge cached={d.data.cached} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="no-scrollbar -mx-1 overflow-x-auto px-1">
+          <Segmented<Tab>
+            label="Match detail"
+            value={tab}
+            onChange={openTab}
+            options={
+              desktop
+                ? [
+                    { value: "overview", label: "Overview" },
+                    { value: "llm", label: "Compare with an AI guess" },
+                  ]
+                : [
+                    { value: "bridges", label: "Shared" },
+                    { value: "overlap", label: "By topic" },
+                    { value: "why", label: "Why" },
+                    { value: "llm", label: "AI guess" },
+                  ]
+            }
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <CachedBadge cached={data.cached} />
+          <Link href={`/kit/${client.id}/${caregiver.id}`} className="btn-primary">
+            <Smartphone size={16} /> Bridge Kit
+          </Link>
+        </div>
       </div>
 
-      {mode === "llm" ? (
-        <section className="grid gap-6 md:grid-cols-2">
-          <div className="card p-6">
-            <p className="label">LLM-only (Claude, raw favourites, no Qloo)</p>
-            {llmLoading && <Spinner label="Asking the LLM to guess…" />}
-            {llm && !llm.available && <p className="mt-3 text-sm text-muted">{llm.reason}</p>}
-            {llm && llm.available && (
-              <>
-                <div className="mt-3 flex items-center gap-4">
-                  <ScoreRing value={llm.score} size={64} label="LLM" />
-                  <p className="text-sm">{llm.rationale}</p>
-                </div>
-                <p className="label mt-4">Claimed shared interests</p>
-                <ul className="mt-2 flex flex-wrap gap-1.5">
-                  {llm.sharedInterests.map((s) => (
-                    <li key={s} className="rounded-full border border-dashed border-bad/50 px-2.5 py-0.5 text-xs" title="No Qloo ID: unverified">
-                      {s} <span className="text-bad">· no Qloo ID</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-xs text-muted">The LLM guesses from the names alone. None of these claims carries a Qloo ID or affinity evidence.</p>
-              </>
-            )}
+      <div className={tab === "overview" ? "grid items-start gap-5 lg:grid-cols-[1.25fr_1fr]" : "space-y-5"}>
+      {(tab === "bridges" || tab === "overview") && (
+        <section className="glass animate-rise p-2 sm:p-3" aria-label="Shared interests">
+          <div className="flex items-center gap-2 px-3 pb-1 pt-2">
+            <h3 className="text-lg">Shared interests</h3>
+            <Info>Things Qloo finds both people love. Each bar shows how strongly each person leans toward it.</Info>
           </div>
-          <div className="card p-6">
-            <p className="label">Bonded (Qloo taste graph)</p>
-            <div className="mt-3 flex items-center gap-4">
-              <ScoreRing value={score.tasteScore} size={64} />
-              <p className="text-sm">
-                Computed overlap of two Qloo-expanded profiles across {Object.values(score.perDomain).filter((x) => x.weight > 0).length} domains, with{" "}
-                {score.bridges.length} bridges, each with a Qloo ID and both affinities.
-              </p>
-            </div>
-            <ul className="mt-4 space-y-1.5 text-sm">
-              {score.bridges.map((b) => (
-                <li key={b.entityId} className="flex items-center justify-between gap-2">
-                  <BridgeChip name={b.name} domain={b.domain} weaker={b.weaker} />
-                  <code className="truncate text-[11px] text-muted">{b.entityId}</code>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : (
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-          <div className="card p-6">
-            <h2 className="text-xl">Bridges</h2>
-            <p className="text-sm text-muted">Entities Qloo scores highly for both people, ranked by the weaker of the two affinities.</p>
-            {!score.bridges.length && <p className="mt-4 text-sm text-muted">Qloo found no shared ground for this pair.</p>}
-            <ul className="mt-4 divide-y divide-line">
-              {score.bridges.map((b) => (
-                <li key={b.entityId} className="py-3">
-                  <button className="flex w-full items-center justify-between gap-3 text-left" onClick={() => setOpen(open === b.entityId ? null : b.entityId)} aria-expanded={open === b.entityId}>
-                    <span className="flex items-center gap-2">
-                      <BridgeChip name={b.name} domain={b.domain} weaker={b.weaker} />
-                      {b.sharedSeed && <span className="text-[11px] font-semibold text-teal">both named it</span>}
-                      {b.weaker && <span className="text-[11px] text-muted">weaker bridge</span>}
+          {!score.bridges.length && <p className="p-6 text-center text-sm text-muted">Qloo found no shared ground for this pair.</p>}
+          <ul className="divide-y divide-ink/[0.06]">
+            {score.bridges.map((b, i) => (
+              <li key={b.entityId} className="grid animate-rise grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-3 py-4 sm:grid-cols-[auto_1fr_220px]" style={{ animationDelay: `${i * 60}ms` }}>
+                <DomainIcon domain={b.domain} size={40} />
+                <div className="min-w-0">
+                  <p className="truncate text-[16px] font-semibold">{b.name}</p>
+                  <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+                    {domainLabel(b.domain)}
+                    {b.sharedSeed && <span className="font-semibold text-teal">· both named it</span>}
+                    {b.weaker && <span>· weaker bridge</span>}
+                    <span className="font-mono text-[12.5px]" title="Qloo entity ID">
+                      {b.entityId.slice(0, 8)}…
                     </span>
-                    <span className="text-xs text-muted">{open === b.entityId ? "Hide" : "Evidence"}</span>
-                  </button>
-                  {open === b.entityId && (
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-bg p-3 text-xs">
-                      <dt className="text-muted">Qloo ID</dt>
-                      <dd className="break-all font-mono">{b.entityId}</dd>
-                      <dt className="text-muted">Affinity · {client.name.split(" ")[0]}</dt>
-                      <dd className="tabular-nums">{pct(b.affinityA)}</dd>
-                      <dt className="text-muted">Affinity · {caregiver.name.split(" ")[0]}</dt>
-                      <dd className="tabular-nums">{pct(b.affinityB)}</dd>
-                      <dt className="text-muted">Produced by (client)</dt>
-                      <dd>{b.seedsA.join(", ") || "profile signal"}</dd>
-                      <dt className="text-muted">Produced by (caregiver)</dt>
-                      <dd>{b.seedsB.join(", ") || "profile signal"}</dd>
-                    </dl>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {score.friction.length > 0 && (
-              <div className="mt-5 rounded-xl border border-warn/40 bg-warn/5 p-4">
-                <p className="label text-warn">Friction notes (not blockers)</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {score.friction.map((f) => (
-                    <li key={f.domain}>{f.text}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <Link href={`/kit/${client.id}/${caregiver.id}`} className="btn-primary mt-5">
-              Open Bridge Kit
-            </Link>
-          </div>
-
-          <div className="space-y-6">
-            <div className="card p-6">
-              <h2 className="text-xl">Taste overlap by domain</h2>
-              <p className="text-sm text-muted">How much of each person's Qloo profile the other person shares.</p>
-              <TasteRadar data={radar} clientLabel={client.name.split(" ")[0]} caregiverLabel={caregiver.name.split(" ")[0]} />
+                  </p>
+                </div>
+                <div className="col-span-2 space-y-1 sm:col-span-1">
+                  <div className="flex items-center gap-2 text-[12.5px] text-muted">
+                    <span className="w-14 truncate">{cFirst}</span>
+                    <div className="flex-1">
+                      <Bar value={b.affinityA} tone="teal" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-[12.5px] text-muted">
+                    <span className="w-14 truncate">{gFirst}</span>
+                    <div className="flex-1">
+                      <Bar value={b.affinityB} tone="coral" />
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {score.friction.length > 0 && (
+            <div className="m-2 mt-1 flex gap-3 rounded-2xl bg-warn/10 p-4 text-sm">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warn" />
+              <ul className="space-y-1">
+                {score.friction.map((f) => (
+                  <li key={f.domain}>{f.text}</li>
+                ))}
+              </ul>
             </div>
-            <div className="card p-6">
-              <h2 className="text-xl">Why this match</h2>
-              <table className="mt-3 w-full text-sm">
-                <tbody className="divide-y divide-line">
-                  <tr>
-                    <td className="py-2">Taste (Qloo)</td>
-                    <td className="text-right tabular-nums">{why.taste}</td>
-                    <td className="text-right text-muted">× {why.weights.taste}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2">Continuity</td>
-                    <td className="text-right tabular-nums">{why.continuity}</td>
-                    <td className="text-right text-muted">× {why.weights.continuity}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2">Travel ({why.travelMin} min)</td>
-                    <td className="text-right tabular-nums">{why.travelScore}</td>
-                    <td className="text-right text-muted">× {why.weights.travel}</td>
-                  </tr>
-                  <tr className="font-semibold">
-                    <td className="py-2">Overall</td>
-                    <td className="text-right tabular-nums">{why.composite}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-              <p className="mt-3 text-xs text-muted">
-                Taste = weighted overlap across domains (music {why.domainWeights.music}, TV {why.domainWeights.tv}, film {why.domainWeights.film}, food &
-                places {why.domainWeights.food}, books {why.domainWeights.books}), renormalised over domains with data.
+          )}
+        </section>
+      )}
+
+        <div className="space-y-5">
+      {(tab === "overlap" || tab === "overview") && (
+        <section className="glass animate-rise p-5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg">Shared taste by topic</h3>
+            <Info>How much of each person's Qloo-expanded profile the other person also has, weighted by affinity.</Info>
+          </div>
+          <TasteRadar data={radar} clientLabel={cFirst} caregiverLabel={gFirst} />
+        </section>
+      )}
+
+      {(tab === "why" || tab === "overview") && (
+        <section className={`grid animate-rise gap-4 ${tab === "overview" ? "" : "md:grid-cols-[1fr_1fr]"}`}>
+          <div className="glass p-5">
+            <h3 className="text-lg">Why this match</h3>
+            <div className="mt-4 space-y-3">
+              {[
+                { k: "Qloo taste", v: why.taste, w: why.weights.taste },
+                { k: "Continuity", v: why.continuity, w: why.weights.continuity },
+                { k: `Travel · ${why.travelMin} min`, v: why.travelScore, w: why.weights.travel },
+              ].map((r) => (
+                <div key={r.k}>
+                  <div className="flex justify-between text-sm">
+                    <span>{r.k}</span>
+                    <span className="tabular-nums text-muted">
+                      {r.v} × {r.w}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-ink/[0.07]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-teal to-violet" style={{ width: `${r.v}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex items-baseline justify-between border-t border-ink/[0.07] pt-4">
+              <span className="font-semibold">Overall</span>
+              <span className="font-display text-3xl font-bold tabular-nums">{why.composite}</span>
+            </div>
+          </div>
+          <div className="glass p-5">
+            <h3 className="text-lg">Hard constraints</h3>
+            {why.eligibility?.eligible ? (
+              <p className="mt-4 flex items-center gap-2 text-sm font-medium text-good">
+                <ShieldCheck size={18} /> Passes every constraint for {cFirst}'s schedule
               </p>
-              {why.eligibility && (
-                <p className={`mt-3 text-xs ${why.eligibility.eligible ? "text-good" : "text-bad"}`}>
-                  {why.eligibility.eligible ? "Passes every hard constraint for this client's schedule." : `Hard constraints: ${why.eligibility.reasons.join("; ")}`}
-                </p>
-              )}
+            ) : (
+              <ul className="mt-4 space-y-1.5 text-sm text-bad">
+                {(why.eligibility?.reasons ?? ["No schedule found"]).map((r) => (
+                  <li key={r}>• {r}</li>
+                ))}
+              </ul>
+            )}
+            <p className="label mt-6">Domain weights</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {Object.entries(why.domainWeights).map(([k, v]) => (
+                <span key={k} className="rounded-full bg-ink/[0.05] px-2.5 py-1 text-xs">
+                  {domainLabel(k)} {Math.round(v * 100)}%
+                </span>
+              ))}
             </div>
           </div>
         </section>
       )}
-    </div>
+
+        </div>
+      </div>
+
+      {tab === "llm" && (
+        <section className="grid animate-rise gap-4 md:grid-cols-2">
+          <div className="glass p-5">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink/[0.07]">
+                <Bot size={17} />
+              </span>
+              <h3 className="text-lg">AI guess</h3>
+              <span className="text-xs text-muted">a chatbot reading names only</span>
+            </div>
+            {llmLoading && (
+              <div className="mt-5">
+                <Spinner label="Asking the AI…" />
+              </div>
+            )}
+            {llm && !llm.available && <p className="mt-5 text-sm text-muted">{llm.reason}</p>}
+            {llm && llm.available && (
+              <>
+                <div className="mt-5 flex items-center gap-4">
+                  <ScoreRing value={llm.score} size={64} label="LLM" />
+                  <p className="text-sm">{llm.rationale}</p>
+                </div>
+                <ul className="mt-4 flex flex-wrap gap-1.5">
+                  {llm.sharedInterests.map((s) => (
+                    <li key={s} className="rounded-full border border-dashed border-bad/50 px-2.5 py-1 text-xs">
+                      {s} <span className="text-bad">· unverified</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+          <div className="glass p-5 ring-2 ring-teal/30">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal to-violet text-white">
+                <Sparkles size={16} />
+              </span>
+              <h3 className="text-lg">Bonded</h3>
+              <span className="text-xs text-muted">measured by Qloo</span>
+            </div>
+            <div className="mt-5 flex items-center gap-4">
+              <ScoreRing value={score.tasteScore} size={64} />
+              <p className="text-sm">
+                {score.bridges.length} bridges, each with a Qloo ID and both people's affinity.
+              </p>
+            </div>
+            <ul className="mt-4 space-y-1.5">
+              {score.bridges.map((b) => (
+                <li key={b.entityId} className="flex items-center gap-2 text-sm">
+                  <Check size={15} className="text-good" /> {b.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
