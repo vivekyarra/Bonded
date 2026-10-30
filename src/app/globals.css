@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 251 246 238;
+  --surface: 255 255 255;
+  --ink: 28 39 41;
+  --muted: 96 108 110;
+  --line: 230 222 210;
+  --teal: 14 94 96;
+  --teal-soft: 220 237 235;
+  --coral: 226 109 90;
+  --coral-soft: 252 230 223;
+  --good: 35 134 84;
+  --warn: 196 130 22;
+  --bad: 196 52 52;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: 18 24 25;
+    --surface: 27 35 37;
+    --ink: 236 232 224;
+    --muted: 160 170 170;
+    --line: 50 62 64;
+    --teal: 94 186 180;
+    --teal-soft: 26 56 57;
+    --coral: 240 138 118;
+    --coral-soft: 66 38 34;
+    --good: 98 196 140;
+    --warn: 232 176 74;
+    --bad: 236 110 110;
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+body {
+  @apply font-sans antialiased;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-serif tracking-tight;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl2 border border-line bg-surface shadow-sm;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-teal text-white hover:brightness-110 dark:text-bg;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:border-teal/50;
+  }
+  .btn-danger {
+    @apply btn bg-bad text-white hover:brightness-110 dark:text-bg;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-coralsoft px-2.5 py-0.5 text-xs font-medium text-coral;
+  }
+  .chip-teal {
+    @apply inline-flex items-center gap-1 rounded-full bg-tealsoft px-2.5 py-0.5 text-xs font-medium text-teal;
+  }
+  .label {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
